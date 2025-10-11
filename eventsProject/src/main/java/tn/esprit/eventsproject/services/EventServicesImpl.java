@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -26,6 +27,18 @@ public class EventServicesImpl implements IEventServices{
     private final ParticipantRepository participantRepository;
     private final LogisticsRepository logisticsRepository;
 
+    // Nouvelle méthode: Ajout simple (Create)
+    @Override
+    public Event addEvent(Event event) {
+        return eventRepository.save(event);
+    }
+
+    // Nouvelle méthode: Mise à jour simple (Update)
+    @Override
+    public Event updateEvent(Event event) {
+        return eventRepository.save(event);
+    }
+    
     @Override
     public Participant addParticipant(Participant participant) {
         return participantRepository.save(participant);
@@ -82,8 +95,7 @@ public class EventServicesImpl implements IEventServices{
         List<Logistics> logisticsList = new ArrayList<>();
         for (Event event:events){
             if(event.getLogistics().isEmpty()){
-
-                return null;
+                return null; // Attention: Ceci peut causer des problèmes de NullPointerException en amont.
             }
 
             else {
@@ -116,5 +128,4 @@ public class EventServicesImpl implements IEventServices{
 
         }
     }
-
 }

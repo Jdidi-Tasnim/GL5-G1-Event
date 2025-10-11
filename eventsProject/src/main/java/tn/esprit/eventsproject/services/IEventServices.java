@@ -14,4 +14,8 @@ public interface IEventServices {
     public Logistics addAffectLog(Logistics logistics, String descriptionEvent);
     public List<Logistics> getLogisticsDates(LocalDate date_debut, LocalDate date_fin);
     public void calculCout();
+
+    // Méthodes CRUD simples ajoutées pour le test (C et U)
+    public Event addEvent(Event event);
+    public Event updateEvent(Event event);
 }
