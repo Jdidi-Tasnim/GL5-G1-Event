@@ -13,7 +13,7 @@ import java.util.Optional;
 @SpringBootTest(classes = tn.esprit.eventsproject.EventsProjectApplication.class)
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class EventServicesImplTest { // FIX: Removed 'public' modifier
+class EventServicesImplTest { 
 
     @Autowired
     IEventServices eventService;
@@ -33,7 +33,10 @@ class EventServicesImplTest { // FIX: Removed 'public' modifier
         newEvent.setCout(100.0f);
 
         Event saved = eventService.addEvent(newEvent);
-        Assertions.assertNotNull(saved.getIdEvent());
+        
+        // 🚩 FIX: Replaced Assertions.assertNotNull with a check that the ID is positive
+        Assertions.assertTrue(saved.getIdEvent() > 0, "The event ID must be generated and positive.");
+        
         savedEventId = saved.getIdEvent();
     }
 
@@ -55,7 +58,7 @@ class EventServicesImplTest { // FIX: Removed 'public' modifier
         Event updated = eventService.updateEvent(e);
         Assertions.assertEquals("Updated_CRUD", updated.getDescription());
         
-        // FIX: Added delta argument for float comparison (Reliability L4 High)
+        // FIX: Already applied the delta fix for float comparison
         Assertions.assertEquals(200.0f, updated.getCout(), 0.001f, "The cost should have been updated.");
     }
 

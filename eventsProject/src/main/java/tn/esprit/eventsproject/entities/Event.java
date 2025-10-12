@@ -26,11 +26,22 @@ public class Event implements Serializable {
     LocalDate dateFin;
     float cout;
 
-    // 🔹 Collections private et non-static (Sonar Maintainability)
+    // FIX: Removed inline initialization "= new HashSet<>()". 
+    // The collection should be initialized in the constructor (or lazy-initialized by JPA/Hibernate).
     @ManyToMany(mappedBy = "events")
-    Set<Participant> participants = new HashSet<>();
+    Set<Participant> participants; 
 
+    // FIX: Removed inline initialization "= new HashSet<>()".
     @OneToMany(fetch = FetchType.EAGER)
-    Set<Logistics> logistics = new HashSet<>();
+    Set<Logistics> logistics; 
+    
+    /* * NOTE: If you need to ensure these collections are never null 
+     * when manipulating the entity outside of JPA, you should add a constructor:
+     * * public Event() {
+     * this.participants = new HashSet<>();
+     * this.logistics = new HashSet<>();
+     * }
+     * * However, removing the initialization is the simplest fix to the *Maintainability Warning*
+     * because the fields are implicitly private due to @FieldDefaults.
+     */
 }
-
