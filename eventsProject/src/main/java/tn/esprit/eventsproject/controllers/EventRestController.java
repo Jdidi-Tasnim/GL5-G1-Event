@@ -10,7 +10,6 @@ import tn.esprit.eventsproject.services.IEventServices;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RequestMapping("event")
@@ -19,47 +18,46 @@ public class EventRestController {
 
     private final IEventServices eventServices;
 
-    // 🔹 Ajout de participant
+    // ------------------- Participant -------------------
     @PostMapping("/addPart")
-    public Participant addParticipant(@RequestBody Participant participant){
+    public Participant addParticipant(@RequestBody Participant participant) {
         return eventServices.addParticipant(participant);
     }
 
-    // 🔹 Ajout Event avec Participant
+    // ------------------- Event avec affectation participant -------------------
     @PostMapping("/addEvent/{id}")
-    public EventDTO addEventPart(@RequestBody Event event, @PathVariable("id") int idPart){
-        Event savedEvent = eventServices.addAffectEvenParticipant(event, idPart);
-        return convertToDTO(savedEvent);
+    public Event addEventPart(@RequestBody EventDTO eventDTO, @PathVariable("id") int idPart) {
+        Event event = mapDtoToEvent(eventDTO);
+        return eventServices.addAffectEvenParticipant(event, idPart);
     }
 
-    // 🔹 Ajout Event simple
+    // ------------------- Event simple -------------------
     @PostMapping("/addEvent")
-    public EventDTO addEvent(@RequestBody Event event){
-        Event savedEvent = eventServices.addAffectEvenParticipant(event);
-        return convertToDTO(savedEvent);
+    public Event addEvent(@RequestBody EventDTO eventDTO) {
+        Event event = mapDtoToEvent(eventDTO);
+        return eventServices.addAffectEvenParticipant(event);
     }
 
-    // 🔹 Affecter Logistique à un Event
+    // ------------------- Logistics -------------------
     @PutMapping("/addAffectLog/{description}")
-    public Logistics addAffectLog(@RequestBody Logistics logistics, @PathVariable("description") String descriptionEvent){
+    public Logistics addAffectLog(@RequestBody Logistics logistics, @PathVariable("description") String descriptionEvent) {
         return eventServices.addAffectLog(logistics, descriptionEvent);
     }
 
-    // 🔹 Obtenir les logistiques filtrées par date
     @GetMapping("/getLogs/{d1}/{d2}")
-    public List<Logistics> getLogistiquesDates (@PathVariable("d1") LocalDate date_debut, @PathVariable("d2") LocalDate date_fin){
+    public List<Logistics> getLogistiquesDates(@PathVariable("d1") LocalDate date_debut,
+                                               @PathVariable("d2") LocalDate date_fin) {
         return eventServices.getLogisticsDates(date_debut, date_fin);
     }
 
-    // 🔹 Conversion Event -> EventDTO
-    private EventDTO convertToDTO(Event event){
-        EventDTO dto = new EventDTO();
-        dto.setIdEvent(event.getIdEvent());
-        dto.setDescription(event.getDescription());
-        dto.setDateDebut(event.getDateDebut());
-        dto.setDateFin(event.getDateFin());
-        dto.setCout(event.getCout());
-        return dto;
+    // ------------------- Helper Method -------------------
+    private Event mapDtoToEvent(EventDTO dto) {
+        Event event = new Event();
+        event.setDescription(dto.getDescription());
+        event.setDateDebut(dto.getDateDebut());
+        event.setDateFin(dto.getDateFin());
+        event.setCout(dto.getCout());
+        return event;
     }
 }
 

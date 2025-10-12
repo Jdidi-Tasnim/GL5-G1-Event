@@ -1,22 +1,20 @@
 package tn.esprit.eventsproject.dto;
 
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDate;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class EventDTO {
-
-    int idEvent;
-    String description;
-    LocalDate dateDebut;
-    LocalDate dateFin;
-    float cout;
-
-    // 🔹 Collections participants/logistics ne sont pas exposées pour éviter les problèmes de sécurité et de maintenabilité.
+    private String description;
+    private LocalDate dateDebut;
+    private LocalDate dateFin;
+    private float cout; // peut être calculé côté service
 }
 

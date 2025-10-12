@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -15,6 +16,7 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 public class Event implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int idEvent;
@@ -24,10 +26,11 @@ public class Event implements Serializable {
     LocalDate dateFin;
     float cout;
 
+    // 🔹 Collections private et non-static (Sonar Maintainability)
     @ManyToMany(mappedBy = "events")
-    private Set<Participant> participants;  // 🔹 rendu private pour SonarQube
+    Set<Participant> participants = new HashSet<>();
 
     @OneToMany(fetch = FetchType.EAGER)
-    private Set<Logistics> logistics;      // 🔹 rendu private pour SonarQube
+    Set<Logistics> logistics = new HashSet<>();
 }
 
