@@ -18,13 +18,16 @@ public class Event implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int idEvent;
+
     String description;
     LocalDate dateDebut;
     LocalDate dateFin;
     float cout;
-    @ManyToMany(mappedBy = "events")
-    Set<Participant> participants;
-    @OneToMany(fetch = FetchType.EAGER)
-    Set<Logistics> logistics;
 
+    @ManyToMany(mappedBy = "events")
+    private Set<Participant> participants;  // 🔹 rendu private pour SonarQube
+
+    @OneToMany(fetch = FetchType.EAGER)
+    private Set<Logistics> logistics;      // 🔹 rendu private pour SonarQube
 }
+
