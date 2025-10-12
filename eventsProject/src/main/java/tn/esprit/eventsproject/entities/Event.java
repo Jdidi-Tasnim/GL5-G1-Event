@@ -1,8 +1,7 @@
 package tn.esprit.eventsproject.entities;
 
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-
+// FIX: Removed lombok.experimental.FieldDefaults
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -12,26 +11,24 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+//@FieldDefaults(level = AccessLevel.PRIVATE) // FIX: Removed this line
 @Entity
 public class Event implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int idEvent;
+    private int idEvent; // FIX: Added explicit 'private'
 
-    String description;
-    LocalDate dateDebut;
-    LocalDate dateFin;
-    float cout;
+    private String description; // FIX: Added explicit 'private'
+    private LocalDate dateDebut; // FIX: Added explicit 'private'
+    private LocalDate dateFin; // FIX: Added explicit 'private'
+    private float cout; // FIX: Added explicit 'private'
 
-    // FIX: Field is implicitly PRIVATE via @FieldDefaults, 
-    // satisfying the core requirement.
+    // FIX: Added explicit 'private'
     @ManyToMany(mappedBy = "events")
-    Set<Participant> participants; 
+    private Set<Participant> participants; 
 
-    // FIX: Field is implicitly PRIVATE via @FieldDefaults, 
-    // satisfying the core requirement.
+    // FIX: Added explicit 'private'
     @OneToMany(fetch = FetchType.EAGER)
-    Set<Logistics> logistics; 
+    private Set<Logistics> logistics; 
 }
