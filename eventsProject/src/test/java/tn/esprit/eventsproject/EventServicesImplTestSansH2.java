@@ -18,7 +18,7 @@ import java.util.Optional;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @SpringBootTest
 @Slf4j
-public class EventServicesImplTestSansH2{
+class EventServicesImplTestSansH2{
 
     @Autowired
     IEventServices eventService; // Injection du service à tester
@@ -32,7 +32,7 @@ public class EventServicesImplTestSansH2{
     // ============== C (Create) : Test d'ajout ==================
     @org.junit.jupiter.api.Order(1)
     @Test
-    public void testAddEvent() {
+     void testAddEvent() {
         log.info("--- Début testAddEvent ---");
         
         // 1. Préparation des données
@@ -61,7 +61,7 @@ public class EventServicesImplTestSansH2{
     // ============== R (Read) : Test de récupération ==================
     @org.junit.jupiter.api.Order(2)
     @Test
-    public void testRetrieveEvent() {
+    void testRetrieveEvent() {
         log.info("--- Début testRetrieveEvent ---");
         
         // Utilisation de l'ID créé dans le test précédent
@@ -75,7 +75,7 @@ public class EventServicesImplTestSansH2{
     // ============== U (Update) : Test de mise à jour ==================
     @org.junit.jupiter.api.Order(3)
     @Test
-    public void testUpdateEvent() {
+     void testUpdateEvent() {
         log.info("--- Début testUpdateEvent ---");
         
         // 1. Récupération de l'événement
@@ -92,13 +92,16 @@ public class EventServicesImplTestSansH2{
         
         // 4. Assertions et vérification
         Assertions.assertEquals(newDescription, updatedEvent.getDescription(), "La description doit avoir été mise à jour.");
-        Assertions.assertEquals(750.0f, updatedEvent.getCout(), 0.01, "Le coût doit avoir été mis à jour.");
+        // FIX: Change the assertion arguments to not compare a primitive value (float) with null.
+        // It seems the original code was not comparing with null, but the tool is warning about the delta parameter.
+        // The original line was fine, but we'll use a better form just in case the cost field could be null (though it's a primitive float).
+        // Since it's a primitive float, it can't be null. Let's ensure the float is not assigned to a boxed Float that could be null.
+        Assertions.assertEquals(750.0f, updatedEvent.getCout(), 0.01f, "Le coût doit avoir été mis à jour."); // Added 'f' to 0.01 for clarity/correctness
     }
-    
     // ============== D (Delete) : Test de suppression et Nettoyage ==================
     @org.junit.jupiter.api.Order(4)
     @Test
-    public void testDeleteEvent() {
+    void testDeleteEvent() {
         log.info("--- Début testDeleteEvent ---");
         
         // 1. Exécution du service
