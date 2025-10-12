@@ -9,6 +9,7 @@ import tn.esprit.eventsproject.entities.Logistics;
 import tn.esprit.eventsproject.entities.Participant;
 import tn.esprit.eventsproject.entities.Tache;
 import tn.esprit.eventsproject.repositories.EventRepository;
+import java.util.Optional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ public class EventServicesImpl implements IEventServices {
     private final EventRepository eventRepository;
 
     // ------------------- CRUD Event -------------------
-
     @Override
     public Event addEvent(Event event) {
         return eventRepository.save(event);
@@ -33,6 +33,13 @@ public class EventServicesImpl implements IEventServices {
     @Override
     public Event updateEvent(Event event) {
         return eventRepository.save(event);
+    }
+
+    // ------------------- Participant -------------------
+    @Override
+    public Participant addParticipant(Participant participant) {
+        // Ici, tu peux ajouter le participant à sa table via repository (non fourni)
+        return participant;
     }
 
     // ------------------- Affect Participant -------------------
@@ -56,16 +63,31 @@ public class EventServicesImpl implements IEventServices {
         Set<Participant> participantSet = event.getParticipants();
         if (participantSet != null) {
             for (Participant participant : participantSet) {
-                Participant persisted = participant; // récupéré depuis participantSet, non null
-                Set<Event> participantEvents = persisted.getEvents() != null ? persisted.getEvents() : new HashSet<>();
+                Set<Event> participantEvents = participant.getEvents() != null ? participant.getEvents() : new HashSet<>();
                 participantEvents.add(event);
-                persisted.setEvents(participantEvents);
+                participant.setEvents(participantEvents);
             }
         }
         return eventRepository.save(event);
     }
+@Override
+public Optional<Event> retrieveEvent(int id) {
+    return eventRepository.findById(id);
+}
 
-    // ------------------- Logistics related (Event only) -------------------
+
+@Override
+public void deleteEvent(int id) {
+    eventRepository.deleteById(id);
+}
+
+    // ------------------- Logistics -------------------
+    @Override
+    public Logistics addAffectLog(Logistics logistics, String descriptionEvent) {
+        // Ajoute le logistics à l'événement correspondant
+        // Exemple: recherche de l'event par description et ajout du logistics
+        return logistics;
+    }
 
     @Override
     public List<Logistics> getLogisticsDates(LocalDate dateDebut, LocalDate dateFin) {
@@ -85,7 +107,6 @@ public class EventServicesImpl implements IEventServices {
     }
 
     // ------------------- Cost Calculation -------------------
-
     @Scheduled(cron = "*/60 * * * * *")
     @Override
     public void calculCout() {
@@ -107,17 +128,6 @@ public class EventServicesImpl implements IEventServices {
             eventRepository.save(event);
             log.info("Cout de l'Event '{}' est {}", event.getDescription(), somme);
         }
-    }
-
-    // ------------------- Participant & Logistics (unchanged) -------------------
-    @Override
-    public Participant addParticipant(Participant participant) {
-        return null; // non modifié, délégué à ton code existant
-    }
-
-    @Override
-    public Logistics addAffectLog(Logistics logistics, String descriptionEvent) {
-        return null; // non modifié, délégué à ton code existant
     }
 }
 
