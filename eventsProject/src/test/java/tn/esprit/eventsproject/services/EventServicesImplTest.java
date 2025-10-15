@@ -15,6 +15,8 @@ import java.time.LocalDate;
 import java.util.HashSet;
 
 import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 @RunWith(SpringRunner.class)
