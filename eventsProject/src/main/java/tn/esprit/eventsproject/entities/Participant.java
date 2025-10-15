@@ -3,7 +3,7 @@ package tn.esprit.eventsproject.entities;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Set;
 
