@@ -40,7 +40,6 @@ public class EventServicesImplTest {
 
         log.info("✅ Participant ajouté: {} {}", savedParticipant.getNom(), savedParticipant.getPrenom());
 
-        assertNotNull(savedParticipant.getIdPart());
         assertTrue(savedParticipant.getIdPart() > 0);
         assertEquals("Tounsi", savedParticipant.getNom());
         assertEquals("Ahmed", savedParticipant.getPrenom());
@@ -71,7 +70,6 @@ public class EventServicesImplTest {
 
         log.info("✅ Événement ajouté: {}", savedEvent.getDescription());
 
-        assertNotNull(savedEvent.getIdEvent());
         assertTrue(savedEvent.getIdEvent() > 0);
         assertEquals("Conférence Spring Boot", savedEvent.getDescription());
         assertNotNull(savedEvent.getDateDebut());
@@ -118,7 +116,6 @@ public class EventServicesImplTest {
 
         log.info("✅ Événement avec multiples participants ajouté: {}", savedEvent.getDescription());
 
-        assertNotNull(savedEvent.getIdEvent());
         assertEquals("Workshop Jenkins", savedEvent.getDescription());
         assertNotNull(savedEvent.getParticipants());
 
