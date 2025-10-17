@@ -10,13 +10,15 @@
     </parent>
     <groupId>tn.esprit</groupId>
     <artifactId>eventsProject</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.0.3-SNAPSHOT</version>
     <name>eventsProject</name>
     <description>eventsProject</description>
+    <packaging>jar</packaging>
 
     <properties>
         <java.version>1.8</java.version>
         <jacoco.version>0.8.8</jacoco.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
@@ -46,7 +48,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- SPRING BOOT TEST - INCLUT JUnit 5, Mockito, etc. -->
+        <!-- SPRING BOOT TEST -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -66,7 +68,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit 4 EXPLICITE pour la compatibilité -->
+        <!-- JUnit 4 -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -90,7 +92,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin Surefire AMÉLIORÉ -->
+            <!-- Plugin Surefire -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -123,6 +125,27 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Plugin Deploy -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+            </plugin>
         </plugins>
     </build>
+
+    <!-- ✅ CONFIGURATION NEXUS CRITIQUE -->
+    <distributionManagement>
+        <snapshotRepository>
+            <id>deploymentRepo</id>
+            <name>Nexus Snapshot Repository</name>
+            <url>http://localhost:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>deploymentRepo</id>
+            <name>Nexus Release Repository</name>
+            <url>http://localhost:8081/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
 </project>
