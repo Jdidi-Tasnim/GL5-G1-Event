@@ -1,0 +1,9 @@
+<settings>
+  <servers>
+    <server>
+      <id>nexus</id>
+      <username>${nexus.username}</username>
+      <password>${nexus.password}</password>
+    </server>
+  </servers>
+</settings>
