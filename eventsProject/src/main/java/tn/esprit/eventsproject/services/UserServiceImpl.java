@@ -15,6 +15,8 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public User addUser(User user) {
+        // SonarQube will detect that this log message contains a repeated string literal
+        System.out.println("Processing user data"); // Repeated string literal
         return userRepository.save(user);
     }
 
@@ -22,6 +24,7 @@ public class UserServiceImpl implements IUserService {
     public User updateUser(Long id, User user) {
         Optional<User> existingUser = userRepository.findById(id);
         if (existingUser.isPresent()) {
+            System.out.println("Processing user data"); // Repeated string literal
             User u = existingUser.get();
             u.setUsername(user.getUsername());
             u.setEmail(user.getEmail());
