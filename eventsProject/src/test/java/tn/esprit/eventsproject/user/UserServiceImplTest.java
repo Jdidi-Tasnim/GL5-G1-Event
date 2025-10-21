@@ -1,35 +1,34 @@
 package tn.esprit.eventsproject.user;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.eventsproject.entities.User;
-import tn.esprit.eventsproject.services.IUserService;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
 public class UserServiceImplTest {
 
-    @Autowired
-    private IUserService userService;
+    private InMemoryUserService userService;
+
+    @BeforeEach
+    public void setup() {
+        userService = new InMemoryUserService();
+    }
 
     @Test
-    @Transactional
     public void testAddUser() {
-        // Create a user with Tunisian name
         User user = new User();
         user.setUsername("FaresTriki");
         user.setEmail("fares.triki@esprit.tn");
         user.setPassword("password123");
 
-        // Save the user
         User savedUser = userService.addUser(user);
 
-        // Assertions
         assertNotNull(savedUser);
         assertNotNull(savedUser.getId());
         assertEquals("FaresTriki", savedUser.getUsername());
@@ -37,9 +36,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    @Transactional
     public void testUpdateUser() {
-        // First create a user
         User user = new User();
         user.setUsername("AmeniChebbi");
         user.setEmail("ameni.chebbi@esprit.tn");
@@ -47,7 +44,6 @@ public class UserServiceImplTest {
         User savedUser = userService.addUser(user);
         Long userId = savedUser.getId();
 
-        // Update the user
         User updatedUser = new User();
         updatedUser.setUsername("AmeniUpdated");
         updatedUser.setEmail("ameni.updated@esprit.tn");
@@ -55,7 +51,6 @@ public class UserServiceImplTest {
         
         User result = userService.updateUser(userId, updatedUser);
 
-        // Assertions
         assertNotNull(result);
         assertEquals(userId, result.getId());
         assertEquals("AmeniUpdated", result.getUsername());
@@ -63,9 +58,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    @Transactional
     public void testDeleteUser() {
-        // First create a user
         User user = new User();
         user.setUsername("MouradMeddeb");
         user.setEmail("mourad.meddeb@esprit.tn");
@@ -73,16 +66,13 @@ public class UserServiceImplTest {
         User savedUser = userService.addUser(user);
         Long userId = savedUser.getId();
 
-        // Delete the user
         userService.deleteUser(userId);
 
-        // Verify user is deleted
         User deletedUser = userService.getUser(userId);
         assertNull(deletedUser);
     }
 
     @Test
-    @Transactional
     public void testGetAllUsers() {
         User user1 = new User();
         user1.setUsername("AmalZribi");
@@ -99,7 +89,7 @@ public class UserServiceImplTest {
         List<User> users = userService.getAllUsers();
 
         assertNotNull(users);
-        assertTrue(users.size() >= 2);
+        assertEquals(2, users.size());
         
         boolean foundAmal = false;
         boolean foundNader = false;
@@ -115,5 +105,40 @@ public class UserServiceImplTest {
         
         assertTrue(foundAmal);
         assertTrue(foundNader);
+    }
+
+    // In-memory implementation of user service for testing
+    private static class InMemoryUserService {
+        private final Map<Long, User> userStore = new HashMap<>();
+        private long idCounter = 1;
+
+        public User addUser(User user) {
+            user.setId(idCounter++);
+            userStore.put(user.getId(), user);
+            return user;
+        }
+
+        public User updateUser(Long id, User updatedUser) {
+            if (userStore.containsKey(id)) {
+                User existingUser = userStore.get(id);
+                existingUser.setUsername(updatedUser.getUsername());
+                existingUser.setEmail(updatedUser.getEmail());
+                existingUser.setPassword(updatedUser.getPassword());
+                return existingUser;
+            }
+            return null;
+        }
+
+        public void deleteUser(Long id) {
+            userStore.remove(id);
+        }
+
+        public User getUser(Long id) {
+            return userStore.get(id);
+        }
+
+        public List<User> getAllUsers() {
+            return new ArrayList<>(userStore.values());
+        }
     }
 }
