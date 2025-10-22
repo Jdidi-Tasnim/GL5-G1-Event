@@ -1,5 +1,7 @@
 package tn.esprit.eventsproject.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.eventsproject.dto.UserDTO;
@@ -11,6 +13,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 public class UserRestController {
+    private static final Logger log = LoggerFactory.getLogger(UserRestController.class);
+    
     @Autowired
     private IUserService userService;
     
@@ -41,8 +45,8 @@ public class UserRestController {
                 return entityMapper.toUserDTO(updatedUser);
             }
         } catch (Exception e) {
-            // Log the exception instead of empty catch block
-            System.err.println("Error updating user with ID " + id + ": " + e.getMessage());
+            // Log the exception with a proper logger
+            log.error("Error updating user with ID {}: {}", id, e.getMessage(), e);
         }
         return null;
     }
