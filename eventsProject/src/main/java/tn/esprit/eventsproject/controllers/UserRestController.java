@@ -2,7 +2,9 @@ package tn.esprit.eventsproject.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.eventsproject.dto.UserDTO;
 import tn.esprit.eventsproject.entities.User;
+import tn.esprit.eventsproject.mappers.EntityMapper;
 import tn.esprit.eventsproject.services.IUserService;
 import java.util.List;
 
@@ -11,19 +13,36 @@ import java.util.List;
 public class UserRestController {
     @Autowired
     private IUserService userService;
+    
+    @Autowired
+    private EntityMapper entityMapper;
 
     @PostMapping
-    public User addUser(@RequestBody User user) {
-        return userService.addUser(user);
+    public UserDTO addUser(@RequestBody UserDTO userDTO) {
+        // For the new user, we need to handle password separately
+        User user = new User();
+        user.setUsername(userDTO.getUsername());
+        user.setEmail(userDTO.getEmail());
+        // Password should be handled securely in a real application
+        User savedUser = userService.addUser(user);
+        return entityMapper.toUserDTO(savedUser);
     }
 
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        // SonarQube will flag the empty catch block - should at least log the exception
+    public UserDTO updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         try {
-            return userService.updateUser(id, user);
+            // First get the existing user to preserve any fields not in DTO
+            User existingUser = userService.getUser(id);
+            if (existingUser != null) {
+                existingUser.setUsername(userDTO.getUsername());
+                existingUser.setEmail(userDTO.getEmail());
+                // Keep the existing password unless specifically changing it
+                User updatedUser = userService.updateUser(id, existingUser);
+                return entityMapper.toUserDTO(updatedUser);
+            }
         } catch (Exception e) {
-            // Empty catch block - SonarQube will flag this
+            // Log the exception instead of empty catch block
+            System.err.println("Error updating user with ID " + id + ": " + e.getMessage());
         }
         return null;
     }
@@ -34,12 +53,14 @@ public class UserRestController {
     }
 
     @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id) {
-        return userService.getUser(id);
+    public UserDTO getUser(@PathVariable Long id) {
+        User user = userService.getUser(id);
+        return entityMapper.toUserDTO(user);
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
-        return userService.getAllUsers();
+    public List<UserDTO> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return entityMapper.toUserDTOList(users);
     }
 }
