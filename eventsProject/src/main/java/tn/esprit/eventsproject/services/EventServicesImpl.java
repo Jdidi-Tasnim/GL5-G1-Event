@@ -34,14 +34,21 @@ public class EventServicesImpl implements IEventServices{
     @Override
     public Event addAffectEvenParticipant(Event event, int idParticipant) {
         Participant participant = participantRepository.findById(idParticipant).orElse(null);
-        if(participant.getEvents() == null){
-            Set<Event> events = new HashSet<>();
-            events.add(event);
-            participant.setEvents(events);
-        }else {
-            participant.getEvents().add(event);
+        
+        // Add null check to avoid NullPointerException
+        if (participant != null) {
+            if(participant.getEvents() == null) {
+                Set<Event> events = new HashSet<>();
+                events.add(event);
+                participant.setEvents(events);
+            } else {
+                participant.getEvents().add(event);
+            }
+            return eventRepository.save(event);
         }
-        return eventRepository.save(event);
+        // Handle the case where participant was not found
+        log.warn("No participant found with ID: {}", idParticipant);
+        return event;  // Return the event without modification
     }
 
     @Override
