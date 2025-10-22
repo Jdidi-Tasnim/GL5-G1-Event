@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.eventsproject.entities.User;
 import tn.esprit.eventsproject.services.IUserService;
-import java.util.ArrayList; // Unused import - SonarQube will flag this
 import java.util.List;
 
 @RestController
