@@ -102,14 +102,14 @@ public class EntityMapper {
     
     // Helper method to convert list of entities to DTOs
     public List<LogisticsDTO> toLogisticsDTOList(List<Logistics> logisticsList) {
-        if (logisticsList == null) return null;
+        if (logisticsList == null) return List.of(); // Return empty list instead of null
         return logisticsList.stream()
                 .map(this::toLogisticsDTO)
                 .collect(Collectors.toList());
     }
     
     public List<UserDTO> toUserDTOList(List<User> users) {
-        if (users == null) return null;
+        if (users == null) return List.of(); // Return empty list instead of null
         return users.stream()
                 .map(this::toUserDTO)
                 .collect(Collectors.toList());

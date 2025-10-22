@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceImplMockitoTest {
+class UserServiceImplMockitoTest {
 
     @Mock
     private UserRepository userRepository;
@@ -39,7 +39,7 @@ public class UserServiceImplMockitoTest {
     }
 
     @Test
-    public void testAddUser() {
+    void testAddUser() {
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         User savedUser = userService.addUser(user);
@@ -52,7 +52,7 @@ public class UserServiceImplMockitoTest {
     }
 
     @Test
-    public void testUpdateUser() {
+    void testUpdateUser() {
         User updatedUser = new User();
         updatedUser.setUsername("YassineTN");
         updatedUser.setEmail("yassine.tn@esprit.tn");
@@ -72,14 +72,14 @@ public class UserServiceImplMockitoTest {
     }
 
     @Test
-    public void testDeleteUser() {
+    void testDeleteUser() {
         userService.deleteUser(1L);
         
         verify(userRepository).deleteById(1L);
     }
 
     @Test
-    public void testGetAllUsers() {
+    void testGetAllUsers() {
         List<User> userList = new ArrayList<>();
         
         User user1 = new User();

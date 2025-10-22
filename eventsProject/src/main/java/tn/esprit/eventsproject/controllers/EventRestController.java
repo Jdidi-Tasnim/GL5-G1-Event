@@ -50,8 +50,8 @@ public class EventRestController {
     }
     
     @GetMapping("/getLogs/{d1}/{d2}")
-    public List<LogisticsDTO> getLogistiquesDates (@PathVariable("d1") LocalDate date_debut, @PathVariable("d2") LocalDate date_fin){
-        List<Logistics> logisticsList = eventServices.getLogisticsDates(date_debut, date_fin);
+    public List<LogisticsDTO> getLogistiquesDates (@PathVariable("d1") LocalDate dateDebut, @PathVariable("d2") LocalDate dateFin){
+        List<Logistics> logisticsList = eventServices.getLogisticsDates(dateDebut, dateFin);
         return entityMapper.toLogisticsDTOList(logisticsList);
     }
 }

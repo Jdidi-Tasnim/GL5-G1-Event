@@ -11,7 +11,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class UserServiceImplTest {
+class UserServiceImplTest {
 
     private InMemoryUserService userService;
 
@@ -21,7 +21,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testAddUser() {
+    void testAddUser() {
         User user = new User();
         user.setUsername("FaresTriki");
         user.setEmail("fares.triki@esprit.tn");
@@ -36,7 +36,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testUpdateUser() {
+    void testUpdateUser() {
         User user = new User();
         user.setUsername("AmeniChebbi");
         user.setEmail("ameni.chebbi@esprit.tn");
@@ -58,7 +58,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testDeleteUser() {
+    void testDeleteUser() {
         User user = new User();
         user.setUsername("MouradMeddeb");
         user.setEmail("mourad.meddeb@esprit.tn");
@@ -73,7 +73,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void testGetAllUsers() {
+    void testGetAllUsers() {
         User user1 = new User();
         user1.setUsername("AmalZribi");
         user1.setEmail("amal.zribi@esprit.tn");

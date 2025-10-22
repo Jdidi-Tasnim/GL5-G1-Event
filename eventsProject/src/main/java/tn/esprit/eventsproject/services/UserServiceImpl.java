@@ -2,6 +2,8 @@ package tn.esprit.eventsproject.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tn.esprit.eventsproject.entities.User;
 import tn.esprit.eventsproject.repositories.UserRepository;
 
@@ -10,6 +12,8 @@ import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements IUserService {
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
+    
     @Autowired
     private UserRepository userRepository;
 
@@ -22,7 +26,7 @@ public class UserServiceImpl implements IUserService {
     public User updateUser(Long id, User user) {
         Optional<User> existingUser = userRepository.findById(id);
         if (existingUser.isPresent()) {
-            System.out.println("Processing user data"); // Repeated string literal
+            log.info("Processing user data for user ID: {}", id);
             User u = existingUser.get();
             u.setUsername(user.getUsername());
             u.setEmail(user.getEmail());

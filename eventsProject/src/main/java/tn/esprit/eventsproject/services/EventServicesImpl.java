@@ -83,14 +83,13 @@ public class EventServicesImpl implements IEventServices{
     }
 
     @Override
-    public List<Logistics> getLogisticsDates(LocalDate date_debut, LocalDate date_fin) {
-        List<Event> events = eventRepository.findByDateDebutBetween(date_debut, date_fin);
+    public List<Logistics> getLogisticsDates(LocalDate dateDebut, LocalDate dateFin) {
+        List<Event> events = eventRepository.findByDateDebutBetween(dateDebut, dateFin);
 
         List<Logistics> logisticsList = new ArrayList<>();
         for (Event event:events){
             if(event.getLogistics().isEmpty()){
-
-                return null;
+                return List.of(); // Return empty list instead of null
             }
 
             else {
@@ -107,8 +106,7 @@ public class EventServicesImpl implements IEventServices{
     @Scheduled(cron = "*/60 * * * * *")
     @Override
     public void calculCout() {
-        List<Event> events = eventRepository.findByParticipants_NomAndParticipants_PrenomAndParticipants_Tache("Tounsi","Ahmed", Tache.ORGANISATEUR);
-    // eventRepository.findAll();
+        List<Event> events = eventRepository.findByParticipantsNomAndParticipantsPrenomAndParticipantsTache("Tounsi","Ahmed", Tache.ORGANISATEUR);
         float somme = 0f;
         for(Event event:events){
             log.info(event.getDescription());
