@@ -1,0 +1,121 @@
+pipeline {
+    agent any
+    triggers {
+    // Poll SCM every minute (as a fallback)
+    pollSCM('* * * * *') 
+    /*
+    // webhook trigger
+    GenericTrigger(
+        genericVariables: [
+            [key: 'ref', value: '$.ref']
+        ],
+        causeString: 'Triggered by GitHub push',
+        token: 'sPDwHhAeHKiEEl9h5HDvDJmU5f3ZjhSf',
+        regexpFilterText: '$ref',
+        regexpFilterExpression: 'refs/heads/feature/manageutilisateur'
+    )*/
+    }
+
+    tools {
+        maven 'Maven-3.8.8'  
+    }
+
+    environment {
+        registry = "yasminebenslimane123/devopsimage"
+        registryCredential = 'dockerhub'
+        dockerImage = ''
+        PROJECT_DIR = 'eventsProject' // Define the project directory
+    }
+
+    stages {
+        stage('CHECKOUT GIT') {
+            steps {
+                // This will use the same credentials configured in the job
+                checkout scm
+                
+                // Display information about the checked out code
+                sh 'git log -1 --pretty=format:"%h %an %s"'
+            }
+        }
+        stage('MVN CLEAN') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    sh 'mvn clean'
+                }
+            }
+        }
+
+        stage('ARTIFACT CONSTRUCTION') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    echo 'ARTIFACT CONSTRUCTION...'
+                    sh 'mvn package -Dmaven.test.skip=true'
+                }
+            }
+        }
+
+        stage('UNIT TESTS') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    echo 'Launching Unit Tests...'
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('MVN SONARQUBE') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            mvn sonar:sonar \
+                                -Dsonar.host.url=http://sonarqube:9000 \
+                                -Dsonar.login=$SONAR_TOKEN
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('PUBLISH TO NEXUS') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    echo 'Deploying artifact to Nexus...'
+                    withCredentials([usernamePassword(credentialsId: 'nexus-cred', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                        sh '''
+                            mvn deploy \
+                                -DskipTests \
+                                -s settings.xml \
+                                -Dnexus.username=$NEXUS_USER \
+                                -Dnexus.password=$NEXUS_PASS
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('BUILDING OUR IMAGE') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    script {
+                        // Ensure the JAR file exists before building the Docker image
+                        sh 'ls -la target/'
+                        
+                        // Build the Docker image
+                        dockerImage = docker.build("${registry}:${BUILD_NUMBER}")
+                    }
+                }
+            }
+        }
+
+        stage('DEPLOY OUR IMAGE') {
+            steps {
+                script {
+                    docker.withRegistry('', registryCredential) {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+    }
+}
