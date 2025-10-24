@@ -1,27 +1,39 @@
 package tn.esprit.eventsproject.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;  // ✅ Changé vers JUnit 5
+import org.junit.jupiter.api.extension.ExtendWith;  // ✅ Nouvel import
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;  // ✅ Changé vers JUnit 5
 import tn.esprit.eventsproject.entities.Event;
 import tn.esprit.eventsproject.entities.Participant;
 import tn.esprit.eventsproject.entities.Tache;
 
+import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.HashSet;
 
-import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;  // ✅ Changé vers JUnit 5
 
 @Slf4j
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
-@ActiveProfiles("test")
+@Transactional
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MYSQL",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.show-sql=true",
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.properties.hibernate.hbm2ddl.import_files_sql_extractor=org.hibernate.tool.hbm2ddl.MultipleLinesSqlCommandExtractor",
+        "spring.jpa.defer-datasource-initialization=true"
+})
 public class EventServicesImplTest {
 
     @Autowired

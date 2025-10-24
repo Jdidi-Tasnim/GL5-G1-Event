@@ -1,10 +1,10 @@
 package tn.esprit.eventsproject.services;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;  // ✅ Changé vers JUnit 5
+import org.junit.jupiter.api.extension.ExtendWith;  // ✅ Nouvel import
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;  // ✅ Changé vers JUnit 5
 import tn.esprit.eventsproject.entities.Event;
 import tn.esprit.eventsproject.entities.Participant;
 import tn.esprit.eventsproject.entities.Tache;
@@ -15,11 +15,11 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;  // ✅ Changé vers JUnit 5
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)  // ✅ Changé vers JUnit 5
 public class EventServicesImplMockitoTest {
 
     @Mock

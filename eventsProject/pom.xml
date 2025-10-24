@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.18</version> <!-- Version corrigée -->
+        <version>2.7.18</version>
         <relativePath/>
     </parent>
     <groupId>tn.esprit</groupId>
@@ -16,11 +16,12 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>11</java.version> <!-- Changé à Java 11 -->
+        <java.version>11</java.version>
         <jacoco.version>0.8.8</jacoco.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
     </properties>
 
     <dependencies>
@@ -50,7 +51,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- ✅ SWAGGER OPENAPI - AJOUTEZ CETTE DÉPENDANCE -->
+        <!-- SWAGGER OPENAPI -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
@@ -66,7 +67,7 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
-        <!-- SPRING BOOT TEST -->
+        <!-- SPRING BOOT TEST (contient déjà JUnit 5) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -86,11 +87,17 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JUnit 4 -->
+        <!-- Mockito pour les tests -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit Jupiter (JUnit 5) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -124,7 +131,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin Surefire -->
+            <!-- Plugin Surefire CORRIGÉ pour JUnit 5 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -132,6 +139,7 @@
                 <configuration>
                     <includes>
                         <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
                     </includes>
                     <testFailureIgnore>false</testFailureIgnore>
                 </configuration>
@@ -153,7 +161,22 @@
                         <phase>test</phase>
                         <goals>
                             <goal>report</goal>
+                            <!--<goal>check</goal>-->
                         </goals>
+                        <!--<configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>-->
                     </execution>
                 </executions>
             </plugin>
@@ -167,7 +190,7 @@
         </plugins>
     </build>
 
-    <!-- ✅ CONFIGURATION NEXUS CRITIQUE -->
+    <!-- CONFIGURATION NEXUS -->
     <distributionManagement>
         <snapshotRepository>
             <id>deploymentRepo</id>
