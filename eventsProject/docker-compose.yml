@@ -1,0 +1,220 @@
+version: '3.8'
+
+networks:
+  devops-net:
+    driver: bridge
+
+volumes:
+  jenkins_home:
+    name: projet-devops_jenkins_home
+    external: true
+  nexus_data:
+    name: projet-devops_nexus_data
+    external: true
+  sonarqube_data:
+    name: projet-devops_sonarqube_data
+    external: true
+  sonarqube_logs:
+    name: projet-devops_sonarqube_logs
+    external: true
+  sonarqube_extensions:
+    name: projet-devops_sonarqube_extensions
+    external: true
+  postgresql:
+    name: projet-devops_postgresql
+    external: true
+  postgresql_data:
+    name: projet-devops_postgresql_data
+    external: true
+  mysql_data:
+    name: projet-devops_mysql_data
+    external: true
+  prometheus_data:
+    name: projet-devops_prometheus_data
+    external: true
+  grafana_data:
+    name: projet-devops_grafana_data
+    external: true
+
+services:
+  # Jenkins Service
+  jenkins:
+    image: jenkins/jenkins:2.462.3-lts
+    container_name: jenkins
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - devops-net
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+    user: root  # Using root to avoid permission issues with Docker socket
+
+  # Nexus Service
+  nexus:
+    image: sonatype/nexus3:3.68.0
+    container_name: nexus
+    restart: unless-stopped
+    networks:
+      - devops-net
+    ports:
+      - "8081:8081"
+    volumes:
+      - nexus_data:/nexus-data
+    environment:
+      - NEXUS_CONTEXT=/
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # PostgreSQL for SonarQube
+  postgresql:
+    image: postgres:15
+    container_name: postgresql
+    restart: unless-stopped
+    networks:
+      - devops-net
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+
+  # SonarQube Service
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: sonarqube
+    restart: unless-stopped
+    depends_on:
+      - postgresql
+    networks:
+      - devops-net
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    environment:
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://postgresql:5432/sonar
+      - SONARQUBE_JDBC_USERNAME=sonar
+      - SONARQUBE_JDBC_PASSWORD=sonar
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+        
+  # MySQL Service
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: unless-stopped
+    networks:
+      - devops-net
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=eventsProject
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    restart: unless-stopped
+    networks:
+      - devops-net
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+    networks:
+      - devops-net
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+
+
+
+
+
+
+
+
+
+# INSTRUCTIONS:
+# 
+# Before starting: 
+# 1. Increase max virtual memory for elasticsearch (used by SonarQube):
+#    Run this command on your host machine:
+#    sysctl -w vm.max_map_count=262144
+#
+# To start the stack:
+# docker-compose up -d
+#
+# Access points:
+# - Jenkins: http://localhost:8080
+#   Initial password: docker exec -it jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+#
+# - Nexus: http://localhost:8081
+#   Username: admin
+#   Initial password: docker exec -it nexus cat /nexus-data/admin.password
+#
+# - SonarQube: http://localhost:9000
+#   Username: admin
+#   Password: admin (you'll be asked to change it at first login)
+#
+# - MySQL: localhost:3306
+#   Username: root
+#   Password: root
+#   Database: eventsProject
+#
+# Configuration steps after startup:
+# 1. In Jenkins, install these plugins:
+#    - Maven Integration
+#    - Docker
+#    - SonarQube Scanner
+#    - Nexus Artifact Uploader
+#    - Docker Pipeline
+#
+# 2. In Jenkins, configure tools:
+#    - Go to Manage Jenkins → System → SonarQube servers
+#      Add server name: SonarQube
+#      URL: http://sonarqube:9000
+#      Add your SonarQube token as a credential
+#
+# 3. In Nexus:
+#    - After login, create "maven-releases" and "maven-snapshots" repositories
+#
+# 4. In SonarQube:
+#    - Create a token under My Account → Security → Tokens
+#    - Use this token in Jenkins configuration
