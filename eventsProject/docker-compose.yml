@@ -48,7 +48,6 @@ services:
     depends_on:
       - events-app
 
-  # ✅ AJOUT DE GRAFANA
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
