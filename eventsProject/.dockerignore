@@ -1,0 +1,27 @@
+# Maven
+.mvn
+mvnw
+mvnw.cmd
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+
+# Test results
+target/surefire-reports
+target/jacoco.exec
+
+# Source code (we only need the JAR)
+src/
+
+# Documentation
+README.md
+*.md
