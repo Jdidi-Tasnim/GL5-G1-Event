@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     ports:
       - "9999:9999"
-      - "8081:8081"  # PORT POUR ACTUATOR
+      - "8083:8081"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/eventsproject?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
