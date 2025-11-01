@@ -22,7 +22,15 @@ public class Participant implements Serializable {
     String prenom;
     @Enumerated(EnumType.STRING)
     Tache tache;
-    @ManyToMany
-    Set<Event> events;
 
+    @ManyToMany
+    @JoinTable(
+        // Set the join table name to match your SQL script
+        name = "participant_events",
+        // The column for the owning side (Participant)
+        joinColumns = @JoinColumn(name = "participant_id"), 
+        // The column for the inverse side (Event)
+        inverseJoinColumns = @JoinColumn(name = "events_id_event") 
+    )
+    Set<Event> events;
 }
