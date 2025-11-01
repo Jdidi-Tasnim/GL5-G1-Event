@@ -9,6 +9,7 @@ import java.util.Optional;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @DataJpaTest
+@SpringBootTest
 public class TestLogitic {
     @Autowired
     private LogisticsRepository logisticsRepository;
