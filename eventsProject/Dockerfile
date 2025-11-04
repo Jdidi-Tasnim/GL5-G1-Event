@@ -1,6 +1,7 @@
 # Use a lightweight Java image
 FROM openjdk:17-jdk-slim
 
+
 # Create app directory
 WORKDIR /app
 
