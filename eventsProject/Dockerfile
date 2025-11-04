@@ -5,7 +5,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy the built JAR from target folder
-COPY target/eventsProject-1.0.0.jar app.jar
+COPY target/eventsProject-1.0.0-SNAPSHOT.jar app.jar
 
 # Expose your app port (adjust if needed)
 EXPOSE 8080
