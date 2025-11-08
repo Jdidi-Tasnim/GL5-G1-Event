@@ -1,18 +1,31 @@
-output "cluster_info" {
-  description = "Informations sur le cluster EKS"
-  value = {
-    name     = data.aws_eks_cluster.existing.name
-    endpoint = data.aws_eks_cluster.existing.endpoint
-    status   = data.aws_eks_cluster.existing.status
-    version  = data.aws_eks_cluster.existing.version
-  }
+output "cluster_name" {
+  description = "Nom du cluster EKS"
+  value       = aws_eks_cluster.main.name
 }
 
-output "application_urls" {
-  description = "URLs d'accès à l'application"
-  value = {
-    main_port   = "http://<NODE_IP>:30000"
-    alt_port    = "http://<NODE_IP>:30001"
-    health_check = "http://<NODE_IP>:30000/actuator/health"
-  }
+output "cluster_endpoint" {
+  description = "Endpoint du cluster EKS"
+  value       = aws_eks_cluster.main.endpoint
+}
+
+output "cluster_status" {
+  description = "Statut du cluster EKS"
+  value       = aws_eks_cluster.main.status
+}
+
+output "vpc_id" {
+  description = "ID du VPC créé"
+  value       = aws_vpc.eks_vpc.id
+}
+
+output "kubeconfig_instructions" {
+  description = "Instructions pour configurer kubectl"
+  value = <<EOT
+Pour configurer kubectl, exécutez:
+
+aws eks update-kubeconfig --region us-east-1 --name ${aws_eks_cluster.main.name}
+
+Ensuite, vérifiez la connexion:
+kubectl get nodes
+EOT
 }
