@@ -1,0 +1,56 @@
+### Fichiers de Travail de Terraform (CRUCIAL) ###
+# Fichiers et dossiers générés par 'terraform init' qui sont très volumineux
+.terraform/
+
+# Fichiers d'état (contiennent l'état de l'infrastructure)
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Fichiers de plan binaires générés par 'terraform plan -out'
+*.tfplan
+*.tfplan.backup
+
+# Fichiers de variables d'environnement secrets pour Terraform (si utilisés)
+.auto.tfvars
+
+### Build Java/Maven ###
+# Dossier de compilation Maven/Gradle
+/target/
+/bin/
+
+# Fichiers de logs
+*.log
+
+# Fichiers de compilation et d'archive
+*.class
+*.jar
+*.war
+*.zip
+*.tar.gz
+
+# Fichiers de propriétés Maven
+release.properties
+pom.xml.tag
+pom.xml.next
+pom.xml.releaseBackup
+
+### Outils d'IDE (IntelliJ, VS Code, Eclipse, etc.) ###
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+
+### Configuration OS ###
+.DS_Store
+Thumbs.db
+
+### Fichiers de conteneur ###
+# Ignore le contexte de build Docker temporaire
+.dockerignore
+
+### Fichiers Anaconda/Conda (base) ###
+# L'environnement Conda/Anaconda qui s'affiche dans votre console
+.conda/
+.ipynb_checkpoints
