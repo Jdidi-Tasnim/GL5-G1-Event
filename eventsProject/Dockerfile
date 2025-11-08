@@ -1,32 +1,34 @@
-# Use Eclipse Temurin (Official OpenJDK builds) as base image
+# Base image: Eclipse Temurin JDK 17
 FROM eclipse-temurin:17-jre-alpine
 
-# Add labels for better image management
+# Labels
 LABEL maintainer="jdiditasnim"
 LABEL version="1.0"
-LABEL description="Events Project Application"
+LABEL description="Events Project Spring Boot Application (H2)"
 
-# Create non-root user for security
+# Create non-root user
 RUN addgroup -S spring && adduser -S spring -G spring
 
-# Set working directory
+# Working directory
 WORKDIR /app
 
-# Copy the JAR file from target folder
+# Copy jar from target folder
 COPY --chown=spring:spring target/eventsProject-1.0.0-SNAPSHOT.jar app.jar
 
-# Switch to non-root user
+# Set non-root user
 USER spring:spring
 
-# Expose port 8080
+# Expose port
 EXPOSE 8080
 
-# Set Java options
+# Set environment for H2
+ENV SPRING_PROFILES_ACTIVE=h2
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
-# Run the application
+# Run Spring Boot app
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
