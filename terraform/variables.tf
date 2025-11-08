@@ -5,19 +5,13 @@ variable "region" {
 }
 
 variable "cluster_name" {
-  description = "Nom du cluster EKS existant"
+  description = "Name of the EKS cluster"
   type        = string
   default     = "mykubernetes"
 }
 
-variable "docker_image" {
-  description = "Image Docker à déployer"
+variable "node_group_name" {
+  description = "Name of the EKS node group"
   type        = string
-  default     = "thourayalouati/docker-spring-boot:latest"
-}
-
-variable "app_replicas" {
-  description = "Nombre de réplicas de l'application"
-  type        = number
-  default     = 2
+  default     = "nodes"
 }

@@ -1,10 +1,10 @@
 output "cluster_info" {
-  description = "Informations sur le cluster EKS existant"
+  description = "Informations sur le cluster EKS"
   value = {
-    name     = data.aws_eks_cluster.existing.name
-    endpoint = data.aws_eks_cluster.existing.endpoint
-    status   = data.aws_eks_cluster.existing.status
-    version  = data.aws_eks_cluster.existing.version
+    name     = aws_eks_cluster.mykubernetes.name
+    endpoint = aws_eks_cluster.mykubernetes.endpoint
+    status   = aws_eks_cluster.mykubernetes.status
+    version  = aws_eks_cluster.mykubernetes.version
   }
 }
 
@@ -17,7 +17,7 @@ output "application_urls" {
   }
 }
 
-output "deployment_status" {
-  description = "Statut du déploiement"
-  value       = "Application déployée sur le cluster ${data.aws_eks_cluster.existing.name}"
+output "vpc_id" {
+  description = "VPC ID créé"
+  value       = aws_vpc.eks_vpc.id
 }
