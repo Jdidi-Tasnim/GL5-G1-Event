@@ -9,9 +9,3 @@ variable "cluster_name" {
   type        = string
   default     = "mykubernetes"
 }
-
-variable "node_group_name" {
-  description = "Name of the EKS node group"
-  type        = string
-  default     = "nodes"
-}
