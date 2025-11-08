@@ -63,42 +63,68 @@ resource "kubernetes_deployment" "events_app" {
         container {
           name  = "events-app"
           image = var.docker_image
+          
+          # Always pull image to get latest version
+          image_pull_policy = "Always"
 
           port {
             container_port = 8080
+            name          = "http"
           }
 
+          # Ressources réduites pour t3.small
           resources {
             limits = {
               cpu    = "500m"
               memory = "512Mi"
             }
             requests = {
-              cpu    = "250m"
-              memory = "256Mi"
+              cpu    = "100m"
+              memory = "128Mi"
             }
           }
 
+          # Variables d'environnement
+          env {
+            name  = "SPRING_PROFILES_ACTIVE"
+            value = "prod"
+          }
+          
+          env {
+            name  = "SERVER_PORT"
+            value = "8080"
+          }
+
+          # Liveness probe - vérifie si l'app est vivante (TCP au lieu de HTTP)
           liveness_probe {
-            http_get {
-              path = "/actuator/health"
+            tcp_socket {
               port = 8080
             }
-            initial_delay_seconds = 60
+            initial_delay_seconds = 120
             period_seconds        = 10
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
 
+          # Readiness probe - vérifie si l'app est prête (TCP au lieu de HTTP)
           readiness_probe {
-            http_get {
-              path = "/actuator/health"
+            tcp_socket {
               port = 8080
             }
-            initial_delay_seconds = 30
+            initial_delay_seconds = 90
             period_seconds        = 5
+            timeout_seconds       = 3
+            failure_threshold     = 3
           }
         }
       }
     }
+  }
+
+  # Attendre que le déploiement soit complet
+  timeouts {
+    create = "15m"
+    update = "15m"
   }
 }
 
@@ -118,9 +144,15 @@ resource "kubernetes_service" "events_app" {
       port        = 80
       target_port = 8080
       protocol    = "TCP"
+      name        = "http"
     }
 
     type = "LoadBalancer"
+  }
+
+  # Attendre que le service soit prêt
+  timeouts {
+    create = "10m"
   }
 }
 
@@ -128,4 +160,14 @@ resource "kubernetes_service" "events_app" {
 output "service_url" {
   value       = try(kubernetes_service.events_app.status[0].load_balancer[0].ingress[0].hostname, "pending")
   description = "The URL of the deployed application"
+}
+
+output "service_name" {
+  value       = kubernetes_service.events_app.metadata[0].name
+  description = "The name of the service"
+}
+
+output "deployment_name" {
+  value       = kubernetes_deployment.events_app.metadata[0].name
+  description = "The name of the deployment"
 }
