@@ -1,0 +1,35 @@
+# AWS credentials - NE JAMAIS COMMITER !
+credentials
+config
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+terraform.tfstate*
+*.terraform.lock.hcl
+
+# Kubernetes
+.kube/
+
+# Logs
+*.log
+logs/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
