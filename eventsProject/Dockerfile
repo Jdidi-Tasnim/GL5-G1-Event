@@ -1,14 +1,14 @@
-# Utiliser une image Java
-FROM openjdk:17-jdk-slim
+# Utiliser une image Java (version corrigée pour compatibilité)
+FROM eclipse-temurin:11-jre
 
 # Créer un dossier de travail
 WORKDIR /app
 
-# Copier le JAR généré par Maven
-COPY target/eventsProject-0.0.1-SNAPSHOT.jar app.jar
+# CORRECTION : Utiliser le bon nom de JAR (0.0.3-RELEASE au lieu de 0.0.1-SNAPSHOT)
+COPY target/eventsProject-0.0.3-RELEASE.jar app.jar
 
-# Exposer le port de ton application
-EXPOSE 8089
+# Exposer le port de l'application (8080 au lieu de 8089 pour cohérence)
+EXPOSE 8080
 
-# Lancer l'application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Lancer l'application (chemin absolu corrigé)
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
