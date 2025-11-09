@@ -1,78 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: events-app
-  namespace: default
+  name: events-application
+  namespace: gl5-g1-production
   labels:
-    app: events-app
+    app: events
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: events-app
+      app: events
   template:
     metadata:
       labels:
-        app: events-app
+        app: events
     spec:
       containers:
-        - name: events-app
-          image: khalilsmida/docker-spring-boot:latest  # ✅ VOTRE image
-          ports:
-            - containerPort: 8080
-              name: http
-            - containerPort: 8083
-              name: app
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: "prod"
-            - name: SERVER_PORT
-              value: "8080"
-            - name: SPRING_DATASOURCE_URL
-              value: "jdbc:h2:mem:testdb"  # Base H2 en mémoire pour les tests
-            - name: SPRING_DATASOURCE_USERNAME
-              value: "sa"
-            - name: SPRING_DATASOURCE_PASSWORD
-              value: ""
-            - name: SPRING_H2_CONSOLE_ENABLED
-              value: "true"
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "250m"
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
-            initialDelaySeconds: 60
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
-            initialDelaySeconds: 30
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: events-app-config
-data:
-  application.properties: |
-    server.port=8080
-    spring.datasource.url=jdbc:h2:mem:testdb
-    spring.datasource.username=sa
-    spring.datasource.password=
-    spring.h2.console.enabled=true
-    management.endpoints.web.exposure.include=health,metrics,info
-    management.endpoint.health.show-details=always
-    spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-    spring.jpa.hibernate.ddl-auto=create-drop
-    spring.jpa.show-sql=true
+      - name: events-app
+        image: khalilsmida/docker-spring-boot:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 5

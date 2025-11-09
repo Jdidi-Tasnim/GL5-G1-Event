@@ -1,31 +1,21 @@
-output "cluster_name" {
-  description = "Nom du cluster EKS"
-  value       = aws_eks_cluster.main.name
-}
-
 output "cluster_endpoint" {
   description = "Endpoint du cluster EKS"
-  value       = aws_eks_cluster.main.endpoint
+  value       = aws_eks_cluster.cluster.endpoint
+  sensitive   = false
 }
 
-output "cluster_status" {
-  description = "Statut du cluster EKS"
-  value       = aws_eks_cluster.main.status
+output "cluster_certificate_authority_data" {
+  description = "Certificate authority data pour le cluster"
+  value       = aws_eks_cluster.cluster.certificate_authority[0].data
+  sensitive   = true
 }
 
-output "vpc_id" {
-  description = "ID du VPC créé"
-  value       = aws_vpc.eks_vpc.id
+output "cluster_security_group_id" {
+  description = "Security group ID du cluster"
+  value       = aws_eks_cluster.cluster.vpc_config[0].cluster_security_group_id
 }
 
-output "kubeconfig_instructions" {
-  description = "Instructions pour configurer kubectl"
-  value = <<EOT
-Pour configurer kubectl, exécutez:
-
-aws eks update-kubeconfig --region us-east-1 --name ${aws_eks_cluster.main.name}
-
-Ensuite, vérifiez la connexion:
-kubectl get nodes
-EOT
+output "cluster_creation_status" {
+  description = "Statut de création du cluster"
+  value       = "Cluster EKS ${var.cluster_name} créé avec succès!"
 }
