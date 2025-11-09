@@ -11,93 +11,153 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# VPC pour le cluster EKS
-resource "aws_vpc" "eks_vpc" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-
-  tags = {
-    Name = "eks-vpc-gl5-g1-cluster"
+# VPC existant - réutiliser celui que Terraform a créé
+data "aws_vpc" "existing_vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["eks-vpc-gl5-g1-cluster"]
   }
 }
 
-# Subnets publics
-resource "aws_subnet" "public_subnets" {
-  count                   = 2
-  vpc_id                  = aws_vpc.eks_vpc.id
-  cidr_block              = "10.0.${count.index + 1}.0/24"
-  availability_zone       = element(["us-east-1a", "us-east-1b"], count.index)
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "public-subnet-${count.index + 1}"
+# Sous-réseaux existants
+data "aws_subnet" "existing_subnets" {
+  count = 2
+  filter {
+    name   = "tag:Name"
+    values = ["public-subnet-${count.index + 1}-gl5-g1-cluster"]     
   }
 }
 
-# Internet Gateway
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.eks_vpc.id
-
-  tags = {
-    Name = "igw-gl5-g1-cluster"
-  }
+# Rôle IAM du cluster existant
+data "aws_iam_role" "eks_cluster_role" {
+  name = "c180773a4650446l12299827t1w569245-LabEksClusterRole-lmxypM8dKt9v"
 }
 
-# Route Table publique
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.eks_vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-
-  tags = {
-    Name = "public-rt-gl5-g1-cluster"
-  }
+# Rôle IAM du nœud existant
+data "aws_iam_role" "eks_node_role" {
+  name = "c180773a4650446l12299827t1w569245690-LabEksNodeRole-cmr1elw2MhCw"
 }
 
-# Association des subnets publics
-resource "aws_route_table_association" "public_rta" {
-  count          = 2
-  subnet_id      = aws_subnet.public_subnets[count.index].id
-  route_table_id = aws_route_table.public_rt.id
-}
-
-# Cluster EKS (version simplifiée)
-resource "aws_eks_cluster" "main" {
-  name     = "gl5-g1-cluster"
-  role_arn = aws_iam_role.eks_cluster.arn
+# Cluster EKS utilisant les ressources existantes
+resource "aws_eks_cluster" "cluster" {
+  name     = var.cluster_name
+  role_arn = data.aws_iam_role.eks_cluster_role.arn
   version  = "1.28"
 
   vpc_config {
-    subnet_ids = aws_subnet.public_subnets[*].id
+    subnet_ids = [for subnet in data.aws_subnet.existing_subnets : subnet.id]
+    endpoint_private_access = false
     endpoint_public_access  = true
+    public_access_cidrs     = ["0.0.0.0/0"]
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.eks_cluster_policy,
+    data.aws_iam_role.eks_cluster_role
   ]
+
+  tags = {
+    Name = var.cluster_name
+    Environment = "production"
+  }
 }
 
-# IAM Role pour le cluster EKS
-resource "aws_iam_role" "eks_cluster" {
-  name = "eks-cluster-role-gl5-g1-cluster"
+# Group de nodes EKS utilisant le rôle existant
+resource "aws_eks_node_group" "nodes" {
+  cluster_name    = aws_eks_cluster.cluster.name
+  node_group_name = "worker-nodes"
+  node_role_arn   = data.aws_iam_role.eks_node_role.arn
+  subnet_ids      = [for subnet in data.aws_subnet.existing_subnets : subnet.id]
 
-  assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "eks.amazonaws.com"
-      }
-    }]
-    Version = "2012-10-17"
-  })
+  scaling_config {
+    desired_size = 2
+    max_size     = 3
+    min_size     = 1
+  }
+
+  instance_types = ["t3.medium"]
+
+  # Configuration du disk
+  disk_size = 20
+
+  # Mise à jour de la configuration
+  update_config {
+    max_unavailable = 1
+  }
+
+  # Labels pour les nœuds
+  labels = {
+    role = "worker"
+  }
+
+  depends_on = [
+    aws_eks_cluster.cluster,
+    data.aws_iam_role.eks_node_role
+  ]
+
+  tags = {
+    Name = "worker-nodes-${var.cluster_name}"
+  }
 }
 
-resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster.name
+# Security Group pour le cluster EKS - VERSION CORRIGÉE
+resource "aws_security_group" "eks_cluster_sg" {
+  name_prefix = "eks-cluster-sg-"
+  vpc_id      = data.aws_vpc.existing_vpc.id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "EKS API Access"  # ✅ Corrigé - pas d'accents
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTP Access"     # ✅ Corrigé - pas d'accents
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "eks-cluster-sg-${var.cluster_name}"
+  }
+}
+
+# Outputs pour récupérer les informations du cluster
+output "cluster_info" {
+  description = "Informations complètes sur le cluster EKS"
+  value = {
+    name       = aws_eks_cluster.cluster.name
+    endpoint   = aws_eks_cluster.cluster.endpoint
+    status     = aws_eks_cluster.cluster.status
+    version    = aws_eks_cluster.cluster.version
+    arn        = aws_eks_cluster.cluster.arn
+    created_at = aws_eks_cluster.cluster.created_at
+  }
+}
+
+output "node_group_info" {
+  description = "Informations sur le groupe de nœuds"
+  value = {
+    name          = aws_eks_node_group.nodes.node_group_name
+    status        = aws_eks_node_group.nodes.status
+    instance_type = aws_eks_node_group.nodes.instance_types[0]       
+    desired_size  = aws_eks_node_group.nodes.scaling_config[0].desired_size
+    min_size      = aws_eks_node_group.nodes.scaling_config[0].min_size
+    max_size      = aws_eks_node_group.nodes.scaling_config[0].max_size
+  }
+}
+
+output "kubeconfig_instructions" {
+  description = "Instructions pour configurer kubectl"
+  value = "Run: aws eks update-kubeconfig --region us-east-1 --name ${var.cluster_name}"
 }
