@@ -24,16 +24,16 @@ module "eks" {
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
-   cluster_iam_role_arn= "arn:aws:iam::871163049498:role/LabRole"
 
   eks_managed_node_groups = {
     default = {
-      desired_size = 2
-      max_size     = 3
-      min_size     = 1
+      desired_size   = 2
+      max_size       = 3
+      min_size       = 1
       instance_types = ["t3.medium"]
     }
   }
 
   cluster_endpoint_public_access = true
 }
+
