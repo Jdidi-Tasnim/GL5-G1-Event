@@ -1,9 +1,17 @@
 variable "aws_region" {
-  description = "AWS region to deploy in"
-  default     = "us-east-1"
+  description = "AWS region"
+  type        = string
+  default     = "us-west-2"
 }
 
 variable "cluster_name" {
-  description = "EKS Cluster name"
+  description = "Name of the EKS cluster"
+  type        = string
   default     = "my-eks-cluster"
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "dev"
 }
