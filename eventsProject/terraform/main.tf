@@ -20,6 +20,12 @@ provider "aws" {
 # Data source to get available AZs
 data "aws_availability_zones" "available" {
   state = "available"
+  
+  # Exclude us-east-1e as it's not supported by EKS
+  filter {
+    name   = "zone-name"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
+  }
 }
 
 # Data source to get default VPC
@@ -27,11 +33,16 @@ data "aws_vpc" "default" {
   default = true
 }
 
-# Data source to get default subnets
+# Data source to get default subnets - ONLY from supported AZs
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
+  }
+  
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
   }
 }
 
