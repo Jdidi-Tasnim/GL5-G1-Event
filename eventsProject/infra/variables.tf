@@ -1,17 +1,11 @@
-variable "aws_region" {
+variable "cluster_name" {
+  description = "Nom du cluster EKS"
+  type        = string
+  default     = "gl5-g1-cluster"
+}
+
+variable "region" {
   description = "AWS region"
   type        = string
-  default     = "us-west-2"
-}
-
-variable "cluster_name" {
-  description = "Name of the EKS cluster"
-  type        = string
-  default     = "my-eks-cluster"
-}
-
-variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "dev"
+  default     = "us-east-1"
 }
