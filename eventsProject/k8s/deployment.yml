@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventsproject-deployment
+  labels:
+    app: eventsproject
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: eventsproject
+  template:
+    metadata:
+      labels:
+        app: eventsproject
+    spec:
+      containers:
+      - name: eventsproject
+        image: yasminebenslimane123/devopsimage:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql:3306/eventsProject"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "root"
