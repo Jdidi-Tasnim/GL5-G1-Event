@@ -15,7 +15,7 @@ provider "aws" {
 data "aws_vpc" "existing_vpc" {
   filter {
     name   = "tag:Name"
-    values = ["eks-vpc-gl5-g1-cluster"]
+    values = ["porjetDevops-vpc"]
   }
 }
 
@@ -24,18 +24,18 @@ data "aws_subnet" "existing_subnets" {
   count = 2
   filter {
     name   = "tag:Name"
-    values = ["public-subnet-${count.index + 1}-gl5-g1-cluster"]
+    values = ["porjetDevops-subnet-public1-us-east-1a","porjetDevops-subnet-public2-us-east-1b"]
   }
 }
 
 # Rôle IAM du cluster existant
 data "aws_iam_role" "eks_cluster_role" {
-  name = "arn:aws:iam::871163049498:role/LabRole"
+  name = "LabRole"
 }
 
 # Rôle IAM du nœud existant
 data "aws_iam_role" "eks_node_role" {
-  name = "arn:aws:iam::871163049498:role/LabRole"
+  name = "LabRole"
 }
 
 # Cluster EKS utilisant les ressources existantes
