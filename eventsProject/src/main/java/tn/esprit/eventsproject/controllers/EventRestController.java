@@ -13,13 +13,14 @@ import tn.esprit.eventsproject.services.IEventServices;
 import java.time.LocalDate;
 import java.util.List;
 
-@RequiredArgsConstructor
-@RequestMapping("event")
 @RestController
+@RequestMapping("/api")  // 🔧 CORRECTION : Ajout du prefix /api
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")  // 🔧 CORRECTION : Autoriser CORS
 public class EventRestController {
     private final IEventServices eventServices;
 
-    @PostMapping("/addPart")
+    @PostMapping("/participants")
     public Participant addParticipant(@RequestBody ParticipantDTO participantDTO){
         Participant participant = new Participant();
         participant.setNom(participantDTO.getNom());
@@ -28,7 +29,7 @@ public class EventRestController {
         return eventServices.addParticipant(participant);
     }
 
-    @PostMapping("/addEvent/{id}")
+    @PostMapping("/events/participant/{id}")
     public Event addEventPart(@RequestBody EventDTO eventDTO, @PathVariable("id") int idPart){
         Event event = new Event();
         event.setDescription(eventDTO.getDescription());
@@ -38,7 +39,7 @@ public class EventRestController {
         return eventServices.addAffectEvenParticipant(event, idPart);
     }
 
-    @PostMapping("/addEvent")
+    @PostMapping("/events")
     public Event addEvent(@RequestBody EventDTO eventDTO){
         Event event = new Event();
         event.setDescription(eventDTO.getDescription());
@@ -48,7 +49,7 @@ public class EventRestController {
         return eventServices.addAffectEvenParticipant(event);
     }
 
-    @PutMapping("/addAffectLog/{description}")
+    @PutMapping("/logistics/event/{description}")
     public Logistics addAffectLog(@RequestBody LogisticsDTO logisticsDTO, @PathVariable("description") String descriptionEvent){
         Logistics logistics = new Logistics();
         logistics.setDescription(logisticsDTO.getDescription());
@@ -58,8 +59,17 @@ public class EventRestController {
         return eventServices.addAffectLog(logistics, descriptionEvent);
     }
 
-    @GetMapping("/getLogs/{d1}/{d2}")
-    public List<Logistics> getLogistiquesDates (@PathVariable("d1") LocalDate date_debut, @PathVariable("d2") LocalDate date_fin){
+    @GetMapping("/logistics/date-range")
+    public List<Logistics> getLogistiquesDates(
+            @RequestParam("startDate") LocalDate date_debut,
+            @RequestParam("endDate") LocalDate date_fin){
         return eventServices.getLogisticsDates(date_debut, date_fin);
     }
+
+    // 🔧 CORRECTION : Ajout d'un endpoint de test
+    @GetMapping("/test")
+    public String test() {
+        return "Events API is working!";
+    }
+
 }
