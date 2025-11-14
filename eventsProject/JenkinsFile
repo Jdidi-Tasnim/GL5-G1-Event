@@ -15,6 +15,8 @@ pipeline {
         PROJECT_DIR = 'eventsProject'
         AWS_REGION = 'us-east-1'
         EKS_CLUSTER_NAME = 'eventsproject-cluster'
+        TF_VAR_cluster_name = 'eventsproject-cluster'
+        TF_VAR_aws_region = 'us-east-1'
     }
 
     stages {
@@ -22,6 +24,134 @@ pipeline {
             steps {
                 checkout scm
                 sh 'git log -1 --pretty=format:"%h %an %s"'
+            }
+        }
+
+        stage('TEST AWS CREDENTIALS') {
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        sh '''
+                            # Configure AWS credentials
+                            mkdir -p ~/.aws
+                            cat > ~/.aws/credentials <<EOF
+[default]
+aws_access_key_id=${AWS_ACCESS_KEY_ID}
+aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
+aws_session_token=${AWS_SESSION_TOKEN}
+EOF
+                            
+                            cat > ~/.aws/config <<EOF
+[default]
+region=${AWS_REGION}
+output=json
+EOF
+                            
+                            # Test AWS credentials
+                            echo "Testing AWS credentials..."
+                            aws sts get-caller-identity
+                            
+                            # List IAM roles to verify Terraform can discover them
+                            echo "Available IAM roles:"
+                            aws iam list-roles --query 'Roles[?contains(RoleName, `Lab`) || contains(RoleName, `EKS`)].RoleName' --output table
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('TERRAFORM INIT') {
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        dir("${PROJECT_DIR}/terraform") {
+                            sh '''
+                                # Configure AWS credentials
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                                
+                                # Initialize Terraform
+                                terraform init -upgrade
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('TERRAFORM PLAN') {
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        dir("${PROJECT_DIR}/terraform") {
+                            sh '''
+                                # Configure AWS credentials
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                                
+                                # Plan Terraform changes
+                                terraform plan -out=tfplan
+                                
+                                # Show discovered roles
+                                echo "=== Discovered IAM Roles ==="
+                                terraform show tfplan | grep -A 5 "discovered_cluster_role_arn\\|discovered_node_role_arn" || true
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('TERRAFORM APPLY') {
+            when {
+                expression { 
+                    return params.TERRAFORM_ACTION == 'apply' || params.TERRAFORM_ACTION == null
+                }
+            }
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        dir("${PROJECT_DIR}/terraform") {
+                            sh '''
+                                # Configure AWS credentials
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                                
+                                # Apply Terraform changes
+                                terraform apply -auto-approve tfplan
+                                
+                                # Show outputs
+                                echo "=== Terraform Outputs ==="
+                                terraform output
+                                
+                                # Wait for cluster to be ready
+                                echo "Waiting for EKS cluster to be ready..."
+                                aws eks wait cluster-active --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
+                                
+                                echo "Cluster is now ACTIVE!"
+                            '''
+                        }
+                    }
+                }
             }
         }
 
@@ -105,43 +235,6 @@ pipeline {
             }
         }
 
-        stage('TEST AWS CREDENTIALS') {
-            steps {
-                script {
-                    withCredentials([
-                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
-                    ]) {
-                        sh '''
-                            # Configure AWS credentials
-                            mkdir -p ~/.aws
-                            cat > ~/.aws/credentials <<EOF
-[default]
-aws_access_key_id=${AWS_ACCESS_KEY_ID}
-aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
-aws_session_token=${AWS_SESSION_TOKEN}
-EOF
-                            
-                            cat > ~/.aws/config <<EOF
-[default]
-region=${AWS_REGION}
-output=json
-EOF
-                            
-                            # Test AWS credentials
-                            echo "Testing AWS credentials..."
-                            aws sts get-caller-identity
-                            
-                            # List available regions
-                            echo "Available regions:"
-                            aws ec2 describe-regions --query 'Regions[].RegionName' --output table
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('DEPLOY TO AWS EKS') {
             steps {
                 script {
@@ -167,37 +260,60 @@ region=${AWS_REGION}
 output=json
 EOF
                                 
-                                # Check if EKS cluster exists
-                                if aws eks describe-cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION} 2>/dev/null; then
-                                    echo "Cluster ${EKS_CLUSTER_NAME} exists"
-                                    
-                                    # Update kubeconfig
-                                    aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
-                                    
-                                    # Verify kubectl connection
-                                    kubectl cluster-info
-                                    kubectl get nodes
-                                    
-                                    # Apply Kubernetes manifests
-                                    kubectl apply -f k8s/deployment.yaml
-                                    kubectl apply -f k8s/service.yaml
-                                    
-                                    # Wait for deployment to be ready
-                                    kubectl rollout status deployment/eventsproject-deployment
-                                    
-                                    # Get service details
-                                    echo "Service details:"
-                                    kubectl get service eventsproject-service
-                                    
-                                    # Get LoadBalancer URL
-                                    echo "Waiting for LoadBalancer URL..."
-                                    sleep 30
-                                    kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-                                else
-                                    echo "ERROR: Cluster ${EKS_CLUSTER_NAME} does not exist in region ${AWS_REGION}"
-                                    echo "Please create the EKS cluster first using AWS Console or CLI"
-                                    exit 1
-                                fi
+                                # Update kubeconfig
+                                aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
+                                
+                                # Verify kubectl connection
+                                kubectl cluster-info
+                                kubectl get nodes
+                                
+                                # Apply Kubernetes manifests
+                                kubectl apply -f k8s/deployment.yaml
+                                kubectl apply -f k8s/service.yaml
+                                
+                                # Wait for deployment to be ready
+                                kubectl rollout status deployment/eventsproject-deployment --timeout=5m
+                                
+                                # Get service details
+                                echo "Service details:"
+                                kubectl get service eventsproject-service
+                                
+                                # Get LoadBalancer URL
+                                echo "Waiting for LoadBalancer URL..."
+                                sleep 30
+                                LOADBALANCER_URL=$(kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+                                echo "=========================================="
+                                echo "Application URL: http://${LOADBALANCER_URL}"
+                                echo "=========================================="
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('TERRAFORM DESTROY') {
+            when {
+                expression { 
+                    return params.TERRAFORM_ACTION == 'destroy'
+                }
+            }
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        dir("${PROJECT_DIR}/terraform") {
+                            sh '''
+                                # Configure AWS credentials
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                                
+                                # Destroy infrastructure
+                                terraform destroy -auto-approve
                             '''
                         }
                     }
@@ -209,10 +325,38 @@ EOF
     post {
         success {
             echo 'Pipeline completed successfully!'
-            echo 'Your application is deployed to AWS EKS'
+            script {
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                    string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                ]) {
+                    dir("${PROJECT_DIR}/terraform") {
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                            
+                            echo "=== Infrastructure Details ==="
+                            terraform output -json || true
+                        '''
+                    }
+                }
+            }
         }
         failure {
             echo 'Pipeline failed. Check the logs for details.'
         }
     }
 }
+
+// Pipeline parameters for Terraform actions
+properties([
+    parameters([
+        choice(
+            name: 'TERRAFORM_ACTION',
+            choices: ['apply', 'destroy', 'plan-only'],
+            description: 'Select Terraform action'
+        )
+    ])
+])
