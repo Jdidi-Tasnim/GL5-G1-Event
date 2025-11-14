@@ -67,7 +67,7 @@ EOF
         stage('TERRAFORM INIT') {
             when {
                 expression { 
-                    return params.TERRAFORM_ACTION == 'apply' || params.TERRAFORM_ACTION == 'destroy'
+                    return params.TERRAFORM_ACTION != 'destroy'
                 }
             }
             steps {
@@ -84,8 +84,74 @@ EOF
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                                 export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
                                 
+                                echo "=== TERRAFORM INIT ==="
+                                echo "Initializing Terraform (safe operation - does not modify cloud resources)..."
+                                
                                 # Initialize Terraform
                                 terraform init -upgrade
+                                
+                                echo "[SUCCESS] Terraform initialized successfully"
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('TERRAFORM IMPORT EXISTING RESOURCES') {
+            when {
+                expression { 
+                    return params.TERRAFORM_ACTION != 'destroy'
+                }
+            }
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        dir("${PROJECT_DIR}/terraform") {
+                            sh '''
+                                # Configure AWS credentials
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                                
+                                echo "=== CHECKING FOR EXISTING RESOURCES ==="
+                                
+                                # Check if cluster exists in AWS
+                                if aws eks describe-cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION} 2>/dev/null; then
+                                    echo "[SUCCESS] Cluster '${EKS_CLUSTER_NAME}' exists in AWS"
+                                    
+                                    # Check if cluster is in Terraform state
+                                    if terraform state list | grep -q "aws_eks_cluster.main"; then
+                                        echo "[SUCCESS] Cluster already in Terraform state - skipping import"
+                                    else
+                                        echo "[WARNING] Cluster exists in AWS but not in Terraform state"
+                                        echo "[INFO] Importing cluster into Terraform state..."
+                                        terraform import aws_eks_cluster.main ${EKS_CLUSTER_NAME} || {
+                                            echo "[WARNING] Import failed or already imported - continuing..."
+                                        }
+                                    fi
+                                    
+                                    # Check if node group is in Terraform state
+                                    if terraform state list | grep -q "aws_eks_node_group.main"; then
+                                        echo "[SUCCESS] Node group already in Terraform state - skipping import"
+                                    else
+                                        echo "[WARNING] Node group exists but not in Terraform state"
+                                        echo "[INFO] Importing node group into Terraform state..."
+                                        NODE_GROUP_NAME="${EKS_CLUSTER_NAME}-node-group"
+                                        terraform import aws_eks_node_group.main ${EKS_CLUSTER_NAME}:${NODE_GROUP_NAME} || {
+                                            echo "[WARNING] Import failed or already imported - continuing..."
+                                        }
+                                    fi
+                                else
+                                    echo "[INFO] Cluster does not exist in AWS - will be created by Terraform"
+                                fi
+                                
+                                echo "=== Current Terraform State ==="
+                                terraform state list || echo "State is empty"
                             '''
                         }
                     }
@@ -96,7 +162,7 @@ EOF
         stage('TERRAFORM PLAN') {
             when {
                 expression { 
-                    return params.TERRAFORM_ACTION == 'apply'
+                    return params.TERRAFORM_ACTION != 'destroy'
                 }
             }
             steps {
@@ -113,12 +179,24 @@ EOF
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                                 export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
                                 
-                                # Plan Terraform changes
-                                terraform plan -out=tfplan
+                                echo "=== TERRAFORM PLAN ==="
+                                echo "Comparing Terraform state with AWS reality..."
                                 
-                                # Show discovered roles
-                                echo "=== Discovered IAM Roles ==="
-                                terraform show tfplan | grep -A 5 "discovered_cluster_role_arn\\|discovered_node_role_arn" || true
+                                # Plan Terraform changes
+                                terraform plan -out=tfplan -detailed-exitcode || EXIT_CODE=$?
+                                
+                                # Exit codes: 0 = no changes, 1 = error, 2 = changes planned
+                                if [ "${EXIT_CODE:-0}" -eq 0 ]; then
+                                    echo "[SUCCESS] No changes needed - infrastructure matches desired state"
+                                elif [ "${EXIT_CODE:-0}" -eq 2 ]; then
+                                    echo "[WARNING] Changes detected - will be applied in next stage"
+                                    echo ""
+                                    echo "=== Discovered IAM Roles ==="
+                                    terraform show tfplan | grep -A 3 "role_arn" || true
+                                else
+                                    echo "[ERROR] Plan failed with exit code ${EXIT_CODE}"
+                                    exit 1
+                                fi
                             '''
                         }
                     }
@@ -129,7 +207,7 @@ EOF
         stage('TERRAFORM APPLY') {
             when {
                 expression { 
-                    return params.TERRAFORM_ACTION == 'apply'
+                    return params.TERRAFORM_ACTION != 'destroy'
                 }
             }
             steps {
@@ -146,18 +224,38 @@ EOF
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                                 export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
                                 
+                                echo "=== TERRAFORM APPLY ==="
+                                
+                                # Check if plan file exists
+                                if [ ! -f tfplan ]; then
+                                    echo "[WARNING] No plan file found - infrastructure already matches desired state"
+                                    echo "[SUCCESS] Skipping apply - nothing to do"
+                                    exit 0
+                                fi
+                                
+                                echo "Applying Terraform changes..."
+                                
                                 # Apply Terraform changes
                                 terraform apply -auto-approve tfplan
                                 
                                 # Show outputs
+                                echo ""
                                 echo "=== Terraform Outputs ==="
                                 terraform output
                                 
-                                # Wait for cluster to be ready
-                                echo "Waiting for EKS cluster to be ready..."
-                                aws eks wait cluster-active --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
-                                
-                                echo "Cluster is now ACTIVE!"
+                                # Check if cluster was created/updated
+                                if aws eks describe-cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION} 2>/dev/null; then
+                                    CLUSTER_STATUS=$(aws eks describe-cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION} --query 'cluster.status' --output text)
+                                    
+                                    if [ "$CLUSTER_STATUS" = "ACTIVE" ]; then
+                                        echo "[SUCCESS] Cluster is ACTIVE"
+                                    else
+                                        echo "[INFO] Cluster status: $CLUSTER_STATUS"
+                                        echo "Waiting for cluster to become ACTIVE..."
+                                        aws eks wait cluster-active --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
+                                        echo "[SUCCESS] Cluster is now ACTIVE!"
+                                    fi
+                                fi
                             '''
                         }
                     }
@@ -270,31 +368,46 @@ region=${AWS_REGION}
 output=json
 EOF
                                 
+                                echo "=== DEPLOYING TO EKS ==="
+                                
                                 # Update kubeconfig
                                 aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
                                 
                                 # Verify kubectl connection
+                                echo "Verifying cluster connection..."
                                 kubectl cluster-info
                                 kubectl get nodes
                                 
                                 # Apply Kubernetes manifests
+                                echo "Applying Kubernetes manifests..."
                                 kubectl apply -f k8s/deployment.yaml
                                 kubectl apply -f k8s/service.yaml
                                 
                                 # Wait for deployment to be ready
+                                echo "Waiting for deployment to be ready..."
                                 kubectl rollout status deployment/eventsproject-deployment --timeout=5m
                                 
                                 # Get service details
-                                echo "Service details:"
+                                echo ""
+                                echo "=== Service Details ==="
                                 kubectl get service eventsproject-service
                                 
                                 # Get LoadBalancer URL
+                                echo ""
                                 echo "Waiting for LoadBalancer URL..."
                                 sleep 30
                                 LOADBALANCER_URL=$(kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-                                echo "=========================================="
-                                echo "Application URL: http://${LOADBALANCER_URL}"
-                                echo "=========================================="
+                                
+                                if [ -n "$LOADBALANCER_URL" ]; then
+                                    echo "=========================================="
+                                    echo "[SUCCESS] APPLICATION DEPLOYED SUCCESSFULLY!"
+                                    echo "=========================================="
+                                    echo "Application URL: http://${LOADBALANCER_URL}"
+                                    echo "=========================================="
+                                else
+                                    echo "[WARNING] LoadBalancer URL not yet available. Check service status:"
+                                    kubectl describe service eventsproject-service
+                                fi
                             '''
                         }
                     }
@@ -322,8 +435,25 @@ EOF
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                                 export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
                                 
-                                # Destroy infrastructure
-                                terraform destroy -auto-approve
+                                echo "=== TERRAFORM DESTROY ==="
+                                echo "[WARNING] WARNING: This will destroy all infrastructure managed by Terraform"
+                                
+                                # Initialize Terraform first
+                                terraform init -upgrade
+                                
+                                # Check if state file exists
+                                if [ -f terraform.tfstate ] && [ -s terraform.tfstate ]; then
+                                    echo "State file found. Resources to destroy:"
+                                    terraform state list
+                                    
+                                    echo ""
+                                    echo "Destroying infrastructure..."
+                                    terraform destroy -auto-approve
+                                    
+                                    echo "[SUCCESS] Infrastructure destroyed successfully"
+                                else
+                                    echo "[WARNING] No Terraform state file found - nothing to destroy"
+                                fi
                             '''
                         }
                     }
@@ -334,28 +464,39 @@ EOF
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo '=========================================='
+            echo '[SUCCESS] PIPELINE COMPLETED SUCCESSFULLY!'
+            echo '=========================================='
             script {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                    string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
-                ]) {
-                    dir("${PROJECT_DIR}/terraform") {
-                        sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
-                            
-                            echo "=== Infrastructure Details ==="
-                            terraform output -json || true
-                        '''
+                if (params.TERRAFORM_ACTION != 'destroy') {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        dir("${PROJECT_DIR}/terraform") {
+                            sh '''
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                                
+                                echo "=== Infrastructure Summary ==="
+                                terraform output -json 2>/dev/null || echo "No Terraform outputs available"
+                            '''
+                        }
                     }
                 }
             }
         }
         failure {
-            echo 'Pipeline failed. Check the logs for details.'
+            echo '=========================================='
+            echo '[ERROR] PIPELINE FAILED'
+            echo '=========================================='
+            echo 'Check the logs above for details.'
+        }
+        always {
+            echo ''
+            echo 'Pipeline execution completed at: ' + new Date().toString()
         }
     }
 }
@@ -365,8 +506,8 @@ properties([
     parameters([
         choice(
             name: 'TERRAFORM_ACTION',
-            choices: ['skip', 'apply', 'destroy'],
-            description: 'Terraform action: skip (deploy only), apply (create infra + deploy), destroy (delete infra)'
+            choices: ['apply', 'destroy'],
+            description: 'Select action: apply (default - create/update infra + deploy app) OR destroy (delete all infrastructure)'
         )
     ])
 ])
