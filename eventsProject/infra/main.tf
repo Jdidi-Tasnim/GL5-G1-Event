@@ -24,18 +24,18 @@ data "aws_subnet" "existing_subnets" {
   count = 2
   filter {
     name   = "tag:Name"
-    values = ["porjetDevops-subnet-public1-us-east-1a","porjetDevops-subnet-public2-us-east-1b"]
+    values = [element(["porjetDevops-subnet-public1-us-east-1a", "porjetDevops-subnet-public2-us-east-1b"], count.index)]
   }
 }
 
 # Rôle IAM du cluster existant
 data "aws_iam_role" "eks_cluster_role" {
-  name = "LabRole"
+  name = "arn:aws:iam::871163049498:role/LabRole"
 }
 
 # Rôle IAM du nœud existant
 data "aws_iam_role" "eks_node_role" {
-  name = "LabRole"
+  name = "arn:aws:iam::871163049498:role/LabRole"
 }
 
 # Cluster EKS utilisant les ressources existantes
