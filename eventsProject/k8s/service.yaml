@@ -1,12 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: myapp-service
-  namespace: myapp
+  name: events-service
+  namespace: gl5-g1-production
+  labels:
+    app: events
 spec:
-  type: LoadBalancer
   selector:
-    app: myapp
+    app: events
   ports:
-    - port: 80
+    - protocol: TCP
+      port: 80
       targetPort: 8080
+  type: LoadBalancer

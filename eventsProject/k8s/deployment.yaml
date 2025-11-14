@@ -1,27 +1,45 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: myapp-deployment
-  namespace: myapp
+  name: events-application
+  namespace: gl5-g1-production
+  labels:
+    app: events
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: myapp
+      app: events
   template:
     metadata:
       labels:
-        app: myapp
+        app: events
     spec:
       containers:
-        - name: myapp
-          image: oussemahamouda/eventsproject:latest   # your DockerHub image
+        - name: events-app
+          image: khalilsmida/docker-spring-boot:latest
           ports:
             - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
           resources:
             requests:
-              cpu: "250m"
               memory: "256Mi"
+              cpu: "250m"
             limits:
-              cpu: "500m"
               memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
