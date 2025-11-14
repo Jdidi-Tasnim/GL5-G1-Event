@@ -30,12 +30,12 @@ data "aws_subnet" "existing_subnets" {
 
 # Rôle IAM du cluster existant
 data "aws_iam_role" "eks_cluster_role" {
-  name = "arn:aws:iam::871163049498:role/LabRole"
+  name = "LabRole"
 }
 
 # Rôle IAM du nœud existant
 data "aws_iam_role" "eks_node_role" {
-  name = "arn:aws:iam::871163049498:role/LabRole"
+  name = "LabRole"
 }
 
 # Cluster EKS utilisant les ressources existantes
