@@ -65,6 +65,11 @@ EOF
         }
 
         stage('TERRAFORM INIT') {
+            when {
+                expression { 
+                    return params.TERRAFORM_ACTION == 'apply' || params.TERRAFORM_ACTION == 'destroy'
+                }
+            }
             steps {
                 script {
                     withCredentials([
@@ -89,6 +94,11 @@ EOF
         }
 
         stage('TERRAFORM PLAN') {
+            when {
+                expression { 
+                    return params.TERRAFORM_ACTION == 'apply'
+                }
+            }
             steps {
                 script {
                     withCredentials([
@@ -119,7 +129,7 @@ EOF
         stage('TERRAFORM APPLY') {
             when {
                 expression { 
-                    return params.TERRAFORM_ACTION == 'apply' || params.TERRAFORM_ACTION == null
+                    return params.TERRAFORM_ACTION == 'apply'
                 }
             }
             steps {
@@ -355,8 +365,8 @@ properties([
     parameters([
         choice(
             name: 'TERRAFORM_ACTION',
-            choices: ['apply', 'destroy', 'plan-only'],
-            description: 'Select Terraform action'
+            choices: ['skip', 'apply', 'destroy'],
+            description: 'Terraform action: skip (deploy only), apply (create infra + deploy), destroy (delete infra)'
         )
     ])
 ])
