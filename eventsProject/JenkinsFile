@@ -396,24 +396,76 @@ EOF
                                 kubectl cluster-info
                                 kubectl get nodes
                                 
+                                # Check if deployment already exists
+                                if kubectl get deployment eventsproject-deployment 2>/dev/null; then
+                                    echo "[INFO] Deployment already exists. Checking current status..."
+                                    kubectl get deployment eventsproject-deployment
+                                    kubectl get pods -l app=eventsproject-app
+                                    
+                                    echo "[INFO] Checking for failing pods..."
+                                    FAILING_PODS=$(kubectl get pods -l app=eventsproject-app --field-selector=status.phase!=Running -o name 2>/dev/null || true)
+                                    if [ -n "$FAILING_PODS" ]; then
+                                        echo "[WARNING] Found failing pods. Showing logs:"
+                                        for pod in $FAILING_PODS; do
+                                            echo "=== Logs for $pod ==="
+                                            kubectl logs $pod --tail=50 || echo "Could not get logs for $pod"
+                                            echo "=== Describe $pod ==="
+                                            kubectl describe $pod || echo "Could not describe $pod"
+                                        done
+                                        
+                                        echo "[INFO] Deleting failing pods to force restart..."
+                                        echo "$FAILING_PODS" | xargs -r kubectl delete || true
+                                        sleep 10
+                                    fi
+                                fi
+                                
                                 # Apply Kubernetes manifests
                                 echo "Applying Kubernetes manifests..."
                                 kubectl apply -f k8s/deployment.yaml
                                 kubectl apply -f k8s/service.yaml
                                 
-                                # Wait for deployment to be ready
-                                echo "Waiting for deployment to be ready..."
-                                kubectl rollout status deployment/eventsproject-deployment --timeout=5m
+                                # Wait for deployment to be ready with increased timeout
+                                echo "Waiting for deployment to be ready (timeout: 10 minutes)..."
+                                if ! kubectl rollout status deployment/eventsproject-deployment --timeout=10m; then
+                                    echo "[ERROR] Deployment failed to become ready within 10 minutes"
+                                    echo ""
+                                    echo "=== Deployment Status ==="
+                                    kubectl get deployment eventsproject-deployment
+                                    
+                                    echo ""
+                                    echo "=== Pod Status ==="
+                                    kubectl get pods -l app=eventsproject-app -o wide
+                                    
+                                    echo ""
+                                    echo "=== Recent Events ==="
+                                    kubectl get events --sort-by='.lastTimestamp' | tail -20
+                                    
+                                    echo ""
+                                    echo "=== Pod Logs (last 100 lines) ==="
+                                    for pod in $(kubectl get pods -l app=eventsproject-app -o name); do
+                                        echo "--- Logs for $pod ---"
+                                        kubectl logs $pod --tail=100 || echo "Could not get logs for $pod"
+                                        echo ""
+                                        echo "--- Describe $pod ---"
+                                        kubectl describe $pod || echo "Could not describe $pod"
+                                        echo ""
+                                    done
+                                    
+                                    echo "[ERROR] Deployment troubleshooting information printed above"
+                                    exit 1
+                                fi
+                                
+                                echo "[SUCCESS] Deployment is ready!"
                                 
                                 # Get service details
                                 echo ""
                                 echo "=== Service Details ==="
                                 kubectl get service eventsproject-service
                                 
-                                # Get LoadBalancer URL
+                                # Get LoadBalancer URL with increased wait time
                                 echo ""
-                                echo "Waiting for LoadBalancer URL..."
-                                sleep 30
+                                echo "Waiting for LoadBalancer URL (60 seconds)..."
+                                sleep 60
                                 LOADBALANCER_URL=$(kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
                                 
                                 if [ -n "$LOADBALANCER_URL" ]; then
@@ -422,9 +474,17 @@ EOF
                                     echo "=========================================="
                                     echo "Application URL: http://${LOADBALANCER_URL}"
                                     echo "=========================================="
+                                    
+                                    # Show pod status
+                                    echo ""
+                                    echo "=== Running Pods ==="
+                                    kubectl get pods -l app=eventsproject-app -o wide
                                 else
                                     echo "[WARNING] LoadBalancer URL not yet available. Check service status:"
                                     kubectl describe service eventsproject-service
+                                    echo ""
+                                    echo "[INFO] You can get the URL later with:"
+                                    echo "kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                                 fi
                             '''
                         }
