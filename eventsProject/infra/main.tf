@@ -17,7 +17,7 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.8.5"
+  version = "21.2.0"
 
   cluster_name    = var.cluster_name
   cluster_version = "1.29"
@@ -31,4 +31,14 @@ module "eks" {
   # Disable any calls to aws_iam_session_context
   enable_iam_session_tags = false
   manage_aws_auth         = false
+  eks_managed_node_groups = {
+    default = {
+      create_iam_role = false
+      iam_role_arn    = "arn:aws:iam::599730331648:role/LabRole"
+      min_size       = 1
+      max_size       = 1
+      desired_size   = 1
+      instance_types = ["t3.medium"]
+    }
+  }
 }
