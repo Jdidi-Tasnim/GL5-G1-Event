@@ -1,25 +1,12 @@
-output "cluster_endpoint" {
-  description = "EKS cluster endpoint"
-  value       = aws_eks_cluster.main.endpoint
-}
-
 output "cluster_name" {
-  description = "EKS cluster name"
-  value       = aws_eks_cluster.main.name
+  value = module.eks.cluster_name
 }
 
-output "cluster_certificate_authority_data" {
-  description = "Base64 encoded certificate data"
-  value       = aws_eks_cluster.main.certificate_authority[0].data
-  sensitive   = true
+output "cluster_endpoint" {
+  value = module.eks.cluster_endpoint
 }
 
-output "cluster_region" {
-  description = "AWS region"
-  value       = var.aws_region
+output "cluster_security_group_id" {
+  value = module.eks.cluster_security_group_id
 }
-
-output "configure_kubectl" {
-  description = "Command to configure kubectl"
-  value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.main.name}"
-}
+    
