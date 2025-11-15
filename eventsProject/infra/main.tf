@@ -29,7 +29,7 @@ module "eks" {
   iam_role_arn    = "arn:aws:iam::599730331648:role/LabRole"
 
   # Disable any calls to aws_iam_session_context
-
+enable_iam_session_context = false
   eks_managed_node_groups = {
     default = {
       create_iam_role = false
