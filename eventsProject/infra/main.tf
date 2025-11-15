@@ -22,6 +22,9 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = "1.29"
 
+  create_iam_role = false
+  iam_role_arn    = "arn:aws:iam::599730331648:role/LabRole"
+
   subnet_ids = module.vpc.private_subnets
   vpc_id     = module.vpc.vpc_id
 
