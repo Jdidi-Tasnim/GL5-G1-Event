@@ -63,7 +63,6 @@ public class EventRestController {
     public List<Logistics> getLogistiquesDates(
             @RequestParam("startDate") LocalDate date_debut,
             @RequestParam("endDate") LocalDate date_fin){
-
         return eventServices.getLogisticsDates(date_debut, date_fin);
     }
 
