@@ -30,6 +30,8 @@ module "eks" {
 
   eks_managed_node_groups = {
     default_node_group = {
+      create_iam_role = false
+      iam_role_arn    = "arn:aws:iam::599730331648:role/LabRole"
       desired_size = 1
       max_size     = 2
       min_size     = 1
