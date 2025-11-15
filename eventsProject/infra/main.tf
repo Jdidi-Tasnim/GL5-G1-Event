@@ -28,16 +28,17 @@ module "eks" {
   create_iam_role = false
   iam_role_arn    = "arn:aws:iam::599730331648:role/LabRole"
 
-  # Disable any calls to aws_iam_session_context
-enable_iam_session_context = false
+  # 👇 USE THIS LINE to bypass the iam:GetRole permission check
+  create_session_context = false 
+
   eks_managed_node_groups = {
     default = {
       create_iam_role = false
       iam_role_arn    = "arn:aws:iam::599730331648:role/LabRole"
-      min_size       = 1
-      max_size       = 1
-      desired_size   = 1
-      instance_types = ["t3.medium"]
+      min_size        = 1
+      max_size        = 1
+      desired_size    = 1
+      instance_types  = ["t3.medium"]
     }
   }
 }
