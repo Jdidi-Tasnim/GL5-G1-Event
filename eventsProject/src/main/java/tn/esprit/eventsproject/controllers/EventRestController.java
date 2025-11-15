@@ -69,7 +69,7 @@ public class EventRestController {
     // 🔧 CORRECTION : Ajout d'un endpoint de test
     @GetMapping("/test")
     public String test() {
-        return "Events API is working!";
+        return "Events API is working!!";
     }
 
 }
