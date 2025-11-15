@@ -236,8 +236,9 @@ class LogisticsFeatureTests {
         logistics2.setIdLog(2);
         logistics2.setDescription("Projector");
         logistics2.setReserve(true);
-        logistics2.setPrixUnit(150.0f);
-        logistics2.setQuantite(3);
+        
+
+        
 
         Set<Logistics> logisticsSet = new HashSet<>();
         logisticsSet.add(testLogistics); // 50 * 10 = 500

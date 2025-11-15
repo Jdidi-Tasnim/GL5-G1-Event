@@ -1,15 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: events-service
-  namespace: gl5-g1-production
-  labels:
-    app: events
+  name: nginx-service
 spec:
+  type: LoadBalancer
   selector:
-    app: events
+    app: nginx
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 8080
-  type: LoadBalancer
+      targetPort: 80
