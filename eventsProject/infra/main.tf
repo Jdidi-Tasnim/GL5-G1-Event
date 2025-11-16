@@ -26,11 +26,10 @@ module "vpc" {
 # -------------------------------
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "21.8.0"
+  version = "21.8.0"   # <-- module version (do NOT reuse 'version' here)
 
-  # OLD STYLE ARGUMENTS FOR MODULE v21.x
-  name    = var.cluster_name       # cluster name
-  version = "1.29"                 # Kubernetes version
+  name                = var.cluster_name
+  kubernetes_version  = "1.29"   # <-- correct argument for cluster version in v21.x
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
