@@ -6,6 +6,7 @@ output "cluster_endpoint" {
   value = module.eks.cluster_endpoint
 }
 
-output "node_group_info" {
-  value = module.eks.eks_managed_node_groups
+output "kubeconfig" {
+  value     = module.eks.kubeconfig
+  sensitive = true
 }

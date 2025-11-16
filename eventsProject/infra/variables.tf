@@ -5,24 +5,15 @@ variable "aws_region" {
 
 variable "cluster_name" {
   type    = string
-  default = "jenkins-eks-nginx"
+  default = "latest-eks-cluster"
 }
 
-# (Optional) pass keys via variables when running terraform locally.
-variable "aws_access_key" {
+variable "node_instance_type" {
   type    = string
-  default = ""
-}
-variable "aws_secret_key" {
-  type    = string
-  default = ""
-}
-variable "aws_session_token" {
-  type    = string
-  default = ""
+  default = "t3.medium"
 }
 
-variable "node_group_desired_capacity" {
+variable "desired_size" {
   type    = number
   default = 2
 }
