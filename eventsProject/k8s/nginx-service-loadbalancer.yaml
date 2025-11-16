@@ -9,7 +9,6 @@ metadata:
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
 spec:
   selector:
     app: nginx
@@ -20,4 +19,3 @@ spec:
     port: 80
     targetPort: 80
   type: LoadBalancer
-  # Removed loadBalancerClass to avoid immutability issues
