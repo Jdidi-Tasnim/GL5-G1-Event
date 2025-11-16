@@ -1,39 +1,244 @@
 terraform {
-  required_version = ">= 1.0.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
   }
+  required_version = ">= 1.0"
 }
 
 provider "aws" {
-  region = var.region
+  region = var.aws_region
 }
 
-data "aws_availability_zones" "available" {}
+# Create VPC
+resource "aws_vpc" "my_vpc" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
-resource "aws_eks_cluster" "nginx_cluster" {
+  tags = {
+    Name                                        = "eks-vpc-${var.cluster_name}"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+  }
+}
+
+# Create Internet Gateway
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.my_vpc.id
+
+  tags = {
+    Name = "eks-igw-${var.cluster_name}"
+  }
+}
+
+# Create Public Subnets
+resource "aws_subnet" "public_subnet_1" {
+  vpc_id                  = aws_vpc.my_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "${var.aws_region}a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name                                        = "eks-public-subnet-1-${var.cluster_name}"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                    = "1"
+  }
+}
+
+resource "aws_subnet" "public_subnet_2" {
+  vpc_id                  = aws_vpc.my_vpc.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "${var.aws_region}b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name                                        = "eks-public-subnet-2-${var.cluster_name}"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                    = "1"
+  }
+}
+
+# Create Route Table for Public Subnets
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.my_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "eks-public-rt-${var.cluster_name}"
+  }
+}
+
+# Associate Route Table with Public Subnets
+resource "aws_route_table_association" "public_rta_1" {
+  subnet_id      = aws_subnet.public_subnet_1.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_route_table_association" "public_rta_2" {
+  subnet_id      = aws_subnet.public_subnet_2.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+# Security Group for EKS Cluster
+resource "aws_security_group" "eks_cluster_sg" {
+  name        = "eks-cluster-sg-${var.cluster_name}"
+  description = "Security group for EKS cluster ${var.cluster_name}"
+  vpc_id      = aws_vpc.my_vpc.id
+
+  # Allow HTTPS for Kubernetes API
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Application ports
+  ingress {
+    from_port   = 8083
+    to_port     = 8083
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8087
+    to_port     = 8087
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # NodePort range
+  ingress {
+    from_port   = 30000
+    to_port     = 32767
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "eks-cluster-sg-${var.cluster_name}"
+  }
+}
+
+# Security Group for EKS Worker Nodes
+resource "aws_security_group" "eks_worker_sg" {
+  name        = "eks-worker-sg-${var.cluster_name}"
+  description = "Security group for EKS worker nodes ${var.cluster_name}"
+  vpc_id      = aws_vpc.my_vpc.id
+
+  # Allow worker nodes to communicate with each other
+  ingress {
+    from_port = 0
+    to_port   = 65535
+    protocol  = "tcp"
+    self      = true
+  }
+
+  # Allow worker nodes to receive communication from the cluster
+  ingress {
+    from_port       = 1025
+    to_port         = 65535
+    protocol        = "tcp"
+    security_groups = [aws_security_group.eks_cluster_sg.id]
+  }
+
+  # Allow pods to communicate with the cluster API
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.eks_cluster_sg.id]
+  }
+
+  # Application ports
+  ingress {
+    from_port   = 8083
+    to_port     = 8083
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8087
+    to_port     = 8087
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # NodePort range
+  ingress {
+    from_port   = 30000
+    to_port     = 32767
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name                                        = "eks-worker-sg-${var.cluster_name}"
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+  }
+}
+
+# Allow cluster to communicate with worker nodes
+resource "aws_security_group_rule" "cluster_to_worker" {
+  type                     = "egress"
+  from_port                = 1025
+  to_port                  = 65535
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.eks_worker_sg.id
+  security_group_id        = aws_security_group.eks_cluster_sg.id
+}
+
+# EKS Cluster - Use LabRole
+resource "aws_eks_cluster" "my_cluster" {
   name     = var.cluster_name
-  role_arn = aws_iam_role.eks_cluster.arn
-  version  = "1.28"
+  role_arn = var.role_arn
+  version  = "1.30"
 
   vpc_config {
-    subnet_ids = aws_subnet.eks_subnets[*].id
+    subnet_ids              = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+    security_group_ids      = [aws_security_group.eks_cluster_sg.id]
+    endpoint_public_access  = true
+    endpoint_private_access = true
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.eks_cluster_policy,
-    aws_iam_role_policy_attachment.eks_vpc_resource_controller,
+    aws_internet_gateway.igw,
+    aws_security_group.eks_cluster_sg
   ]
+
+  tags = {
+    Name = var.cluster_name
+  }
 }
 
-resource "aws_eks_node_group" "nginx_nodes" {
-  cluster_name    = aws_eks_cluster.nginx_cluster.name
-  node_group_name = "nginx-nodes"
-  node_role_arn   = aws_iam_role.eks_node_group.arn
-  subnet_ids      = aws_subnet.eks_subnets[*].id
+# EKS Node Group - Also use LabRole (AWS Learner Lab limitation)
+resource "aws_eks_node_group" "my_node_group" {
+  cluster_name    = aws_eks_cluster.my_cluster.name
+  node_group_name = "noeud1"
+  node_role_arn   = var.role_arn  # Use LabRole for nodes too
+  subnet_ids      = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
 
   scaling_config {
     desired_size = 2
@@ -41,132 +246,23 @@ resource "aws_eks_node_group" "nginx_nodes" {
     min_size     = 1
   }
 
-  instance_types = ["t3.medium"]
+  instance_types = ["t3.small"]
+  capacity_type  = "ON_DEMAND"
+
+  update_config {
+    max_unavailable = 1
+  }
 
   depends_on = [
-    aws_iam_role_policy_attachment.eks_worker_node_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.ec2_container_registry_read_only,
+    aws_eks_cluster.my_cluster
   ]
-}
-
-# IAM Role for EKS Cluster
-resource "aws_iam_role" "eks_cluster" {
-  name = "${var.cluster_name}-cluster-role"
-
-  assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "eks.amazonaws.com"
-      }
-    }]
-    Version = "2012-10-17"
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster.name
-}
-
-resource "aws_iam_role_policy_attachment" "eks_vpc_resource_controller" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-  role       = aws_iam_role.eks_cluster.name
-}
-
-# IAM Role for Node Group
-resource "aws_iam_role" "eks_node_group" {
-  name = "${var.cluster_name}-node-group-role"
-
-  assume_role_policy = jsonencode({
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-    }]
-    Version = "2012-10-17"
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.eks_node_group.name
-}
-
-resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.eks_node_group.name
-}
-
-resource "aws_iam_role_policy_attachment" "ec2_container_registry_read_only" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.eks_node_group.name
-}
-
-# VPC and Networking
-resource "aws_vpc" "eks_vpc" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
 
   tags = {
-    Name = "${var.cluster_name}-vpc"
-  }
-}
-
-resource "aws_subnet" "eks_subnets" {
-  count = 2
-
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
-  cidr_block              = "10.0.${count.index + 1}.0/24"
-  vpc_id                  = aws_vpc.eks_vpc.id
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "${var.cluster_name}-subnet-${count.index + 1}"
-  }
-}
-
-resource "aws_internet_gateway" "eks_igw" {
-  vpc_id = aws_vpc.eks_vpc.id
-
-  tags = {
-    Name = "${var.cluster_name}-igw"
-  }
-}
-
-resource "aws_route_table" "eks_rt" {
-  vpc_id = aws_vpc.eks_vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.eks_igw.id
+    Name                                        = "eks-node-${var.cluster_name}"
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
   }
 
-  tags = {
-    Name = "${var.cluster_name}-rt"
+  lifecycle {
+    ignore_changes = [scaling_config[0].desired_size]
   }
-}
-
-resource "aws_route_table_association" "eks_rta" {
-  count = 2
-
-  subnet_id      = aws_subnet.eks_subnets[count.index].id
-  route_table_id = aws_route_table.eks_rt.id
-}
-
-output "cluster_name" {
-  value = aws_eks_cluster.nginx_cluster.name
-}
-
-output "cluster_endpoint" {
-  value = aws_eks_cluster.nginx_cluster.endpoint
-}
-
-output "cluster_security_group_id" {
-  value = aws_eks_cluster.nginx_cluster.vpc_config[0].cluster_security_group_id
 }
