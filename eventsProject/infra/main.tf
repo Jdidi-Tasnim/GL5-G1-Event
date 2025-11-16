@@ -35,14 +35,14 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   # Node groups (managed nodes)
-  node_groups = {
-    default = {
-      desired_capacity = var.desired_size
-      max_capacity     = 3
-      min_capacity     = 1
-      instance_type    = var.node_instance_type
+  worker_groups = [
+    {
+      instance_type = var.node_instance_type
+      asg_desired_capacity = var.desired_size
+      asg_min_size         = 1
+      asg_max_size         = 3
     }
-  }
+  ]
 
   tags = {
     Environment = "jenkins-eks"
