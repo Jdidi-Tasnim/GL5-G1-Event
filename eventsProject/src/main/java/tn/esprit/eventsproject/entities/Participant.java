@@ -1,5 +1,6 @@
 package tn.esprit.eventsproject.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -23,6 +24,7 @@ public class Participant implements Serializable {
     @Enumerated(EnumType.STRING)
     Tache tache;
     @ManyToMany
-    transient Set<Event> events;
+    @JsonIgnore
+    Set<Event> events;
 
 }
