@@ -134,6 +134,33 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.lazerycode.jmeter</groupId>
+                <artifactId>jmeter-maven-plugin</artifactId>
+                <version>3.7.0</version>
+                <executions>
+                    <execution>
+                        <id>jmeter-tests</id>
+                        <goals>
+                            <goal>jmeter</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                    </execution>
+                    <execution>
+                        <id>jmeter-check-results</id>
+                        <goals>
+                            <goal>results</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <testFilesDirectory>${project.basedir}/src/test/jmeter</testFilesDirectory>
+                    <resultsDirectory>${project.build.directory}/jmeter/results</resultsDirectory>
+                    <generateReports>true</generateReports>
+                    <ignoreResultFailures>true</ignoreResultFailures>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

@@ -99,6 +99,40 @@ pipeline {
             }
         }
 
+        stage('JMETER PERFORMANCE TESTS') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    echo '=========================================='
+                    echo 'JMETER PERFORMANCE TESTING'
+                    echo '=========================================='
+                    script {
+                        // Check if JMeter test files exist
+                        def jmeterTestsExist = fileExists('src/test/jmeter')
+                        
+                        if (jmeterTestsExist) {
+                            echo 'Running JMeter performance tests...'
+                            sh '''
+                                mvn verify -DskipTests=true
+                            '''
+                            
+                            // Archive JMeter results
+                            archiveArtifacts artifacts: 'target/jmeter/results/**/*', allowEmptyArchive: true, fingerprint: true
+                            
+                            echo '=========================================='
+                            echo 'JMETER RESULTS AVAILABLE'
+                            echo '=========================================='
+                            echo "JMeter reports: ${BUILD_URL}artifact/target/jmeter/results/"
+                            echo '=========================================='
+                        } else {
+                            echo '[INFO] No JMeter tests found in src/test/jmeter'
+                            echo '[INFO] Create .jmx test files in src/test/jmeter to enable performance testing'
+                            echo 'Skipping JMeter stage...'
+                        }
+                    }
+                }
+            }
+        }
+
         stage('PROMETHEUS') {
             steps {
                 echo '=========================================='
