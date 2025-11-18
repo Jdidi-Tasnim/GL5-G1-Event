@@ -396,14 +396,34 @@ EOF
                                 kubectl cluster-info
                                 kubectl get nodes
                                 
+                                # Deploy MySQL first
+                                echo "=========================================="
+                                echo "Deploying MySQL Database..."
+                                echo "=========================================="
+                                kubectl apply -f k8s/mysql-deployment.yaml
+                                
+                                echo "Waiting for MySQL to be ready..."
+                                kubectl rollout status deployment/mysql --timeout=5m
+                                
+                                # Verify MySQL is running
+                                echo "Checking MySQL pod status..."
+                                kubectl get pods -l app=mysql
+                                
+                                # Wait a bit more for MySQL to be fully ready
+                                echo "Allowing MySQL to fully initialize..."
+                                sleep 20
+                                
                                 # Check if deployment already exists
+                                echo "=========================================="
+                                echo "Deploying Application..."
+                                echo "=========================================="
                                 if kubectl get deployment eventsproject-deployment 2>/dev/null; then
                                     echo "[INFO] Deployment already exists. Checking current status..."
                                     kubectl get deployment eventsproject-deployment
-                                    kubectl get pods -l app=eventsproject-app
+                                    kubectl get pods -l app=eventsproject
                                     
                                     echo "[INFO] Checking for failing pods..."
-                                    FAILING_PODS=$(kubectl get pods -l app=eventsproject-app --field-selector=status.phase!=Running -o name 2>/dev/null || true)
+                                    FAILING_PODS=$(kubectl get pods -l app=eventsproject --field-selector=status.phase!=Running -o name 2>/dev/null || true)
                                     if [ -n "$FAILING_PODS" ]; then
                                         echo "[WARNING] Found failing pods. Showing logs:"
                                         for pod in $FAILING_PODS; do
@@ -472,7 +492,10 @@ EOF
                                     echo "=========================================="
                                     echo "[SUCCESS] APPLICATION DEPLOYED SUCCESSFULLY!"
                                     echo "=========================================="
-                                    echo "Application URL: http://${LOADBALANCER_URL}"
+                                    echo "Application URL: http://${LOADBALANCER_URL}/events"
+                                    echo "Swagger UI: http://${LOADBALANCER_URL}/events/swagger-ui/index.html"
+                                    echo "API Docs: http://${LOADBALANCER_URL}/events/v3/api-docs"
+                                    echo "Health Check: http://${LOADBALANCER_URL}/events/actuator/health"
                                     echo "=========================================="
                                     
                                     # Show pod status
