@@ -122,21 +122,3 @@ resource "aws_eks_node_group" "main" {
 
   depends_on = [aws_eks_cluster.main]
 }
-
-# Install EBS CSI Driver Addon
-resource "aws_eks_addon" "ebs_csi_driver" {
-  cluster_name             = aws_eks_cluster.main.name
-  addon_name               = "aws-ebs-csi-driver"
-  addon_version            = "v1.37.0-eksbuild.1"  # Latest compatible version
-  resolve_conflicts_on_create = "OVERWRITE"
-  
-  tags = {
-    Name        = "${var.cluster_name}-ebs-csi-driver"
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-  }
-
-  depends_on = [
-    aws_eks_node_group.main
-  ]
-}

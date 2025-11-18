@@ -48,18 +48,3 @@ output "aws_account_id" {
   description = "AWS Account ID"
   value       = data.aws_caller_identity.current.account_id
 }
-
-output "ebs_csi_driver_addon_arn" {
-  description = "ARN of EBS CSI Driver addon"
-  value       = aws_eks_addon.ebs_csi_driver.arn
-}
-
-output "ebs_csi_driver_addon_version" {
-  description = "Version of EBS CSI Driver addon"
-  value       = aws_eks_addon.ebs_csi_driver.addon_version
-}
-
-output "ebs_csi_driver_addon_id" {
-  description = "ID of EBS CSI Driver addon"
-  value       = aws_eks_addon.ebs_csi_driver.id
-}
