@@ -25,6 +25,7 @@ public class Participant implements Serializable {
     Tache tache;
     @ManyToMany
     @JsonIgnore
+    @SuppressWarnings("java:S1948")  // Suppress "Make events transient or serializable" warning
     Set<Event> events;
 
 }
