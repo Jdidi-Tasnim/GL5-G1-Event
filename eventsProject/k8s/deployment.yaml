@@ -13,13 +13,15 @@ spec:
     metadata:
       labels:
         app: eventsproject
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-11-18T13:45:00Z" 
     spec:
       containers:
       - name: eventsproject
         image: yasminebenslimane123/devopsimage:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: 8089  
         env:
         - name: SPRING_DATASOURCE_URL
           value: "jdbc:mysql://mysql-service:3306/eventsProject"
@@ -32,7 +34,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /events/actuator/health
-            port: 8080
+            port: 8089  
           initialDelaySeconds: 90
           periodSeconds: 10
           timeoutSeconds: 5
@@ -40,7 +42,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /events/actuator/health
-            port: 8080
+            port: 8089  
           initialDelaySeconds: 60
           periodSeconds: 5
           timeoutSeconds: 3
