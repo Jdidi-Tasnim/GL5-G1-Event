@@ -522,10 +522,10 @@ EOF
                                 
                                 if [ -n "$LOADBALANCER_URL" ]; then
                                     echo "=========================================="
-                                    echo "[SUCCESS] APPLICATION DEPLOYED SUCCESSFULLY!"
+                                    echo "[SUCCESS] APPLICATION DEPLOYED SUCCESSFULLY"
                                     echo "=========================================="
                                     echo "Application URL: http://${LOADBALANCER_URL}/events"
-                                    echo "Swagger UI: http://${LOADBALANCER_URL}/events/swagger-ui/index.html"
+                                    echo "Swagger UI: http://${LOADBALANCER_URL}/events/swagger-ui.html"
                                     echo "API Docs: http://${LOADBALANCER_URL}/events/v3/api-docs"
                                     echo "Health Check: http://${LOADBALANCER_URL}/events/actuator/health"
                                     echo "=========================================="
@@ -533,6 +533,31 @@ EOF
                                     # Show pod status
                                     echo ""
                                     echo "=== Running Pods ==="
+                                    kubectl get pods -l app=eventsproject -o wide
+                                    
+                                    # Wait for application to be fully ready
+                                    echo ""
+                                    echo "Waiting for application to be fully ready (3 minutes)..."
+                                    sleep 180
+                                    
+                                    # Test health endpoint
+                                    echo ""
+                                    echo "=== Testing Health Endpoint ==="
+                                    HEALTH_URL="http://${LOADBALANCER_URL}/events/actuator/health"
+                                    echo "Testing: ${HEALTH_URL}"
+                                    
+                                    if curl -f -s "${HEALTH_URL}" > /dev/null 2>&1; then
+                                        echo "[SUCCESS] Health check passed"
+                                        echo "Response:"
+                                        curl -s "${HEALTH_URL}"
+                                    else
+                                        echo "[WARNING] Health check failed or endpoint not responding"
+                                        echo "Attempting to get response anyway:"
+                                        curl -s "${HEALTH_URL}" || echo "No response received"
+                                    fi
+                                    
+                                    echo ""
+                                    echo "=== Pod Status After Health Check ==="
                                     kubectl get pods -l app=eventsproject -o wide
                                 else
                                     echo "[WARNING] LoadBalancer URL not yet available. Check service status:"
