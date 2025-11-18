@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    
+
     options {
         ansiColor('xterm')
     }
@@ -407,16 +407,43 @@ EOF
                                 echo "=========================================="
                                 kubectl apply -f k8s/mysql-deployment.yaml
                                 
-                                echo "Waiting for MySQL to be ready..."
-                                kubectl rollout status deployment/mysql --timeout=5m
+                                echo "Waiting for PVC to be bound..."
+                                kubectl get pvc mysql-pvc
+                                
+                                echo "Waiting for MySQL deployment to be ready (timeout: 10 minutes)..."
+                                if ! kubectl rollout status deployment/mysql --timeout=10m; then
+                                    echo "[ERROR] MySQL deployment failed to become ready"
+                                    echo ""
+                                    echo "=== MySQL Pod Status ==="
+                                    kubectl get pods -l app=mysql -o wide
+                                    
+                                    echo ""
+                                    echo "=== MySQL Pod Logs ==="
+                                    kubectl logs -l app=mysql --tail=100 || echo "Could not get MySQL logs"
+                                    
+                                    echo ""
+                                    echo "=== MySQL Pod Description ==="
+                                    kubectl describe pod -l app=mysql || echo "Could not describe MySQL pod"
+                                    
+                                    echo ""
+                                    echo "=== PVC Status ==="
+                                    kubectl get pvc mysql-pvc
+                                    kubectl describe pvc mysql-pvc
+                                    
+                                    echo ""
+                                    echo "=== Storage Classes ==="
+                                    kubectl get storageclass
+                                    
+                                    exit 1
+                                fi
                                 
                                 # Verify MySQL is running
-                                echo "Checking MySQL pod status..."
+                                echo "[SUCCESS] MySQL deployment is ready!"
                                 kubectl get pods -l app=mysql
                                 
-                                # Wait a bit more for MySQL to be fully ready
-                                echo "Allowing MySQL to fully initialize..."
-                                sleep 20
+                                # Wait for MySQL to fully initialize
+                                echo "Allowing MySQL to fully initialize (30 seconds)..."
+                                sleep 30
                                 
                                 # Check if deployment already exists
                                 echo "=========================================="
