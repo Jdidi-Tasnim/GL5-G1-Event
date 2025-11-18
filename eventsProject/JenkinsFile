@@ -534,10 +534,18 @@ EOF
                                     fi
                                 fi
                                 
-                                # Apply Kubernetes manifests
+                                # Apply Kubernetes manifests with build-specific image tag
                                 echo "Applying Kubernetes manifests..."
-                                kubectl apply -f k8s/deployment.yaml
+                                
+                                # Create temporary deployment file with build-specific image tag
+                                sed "s|image: yasminebenslimane123/devopsimage:.*|image: yasminebenslimane123/devopsimage:${BUILD_NUMBER}|g" k8s/deployment.yaml > k8s/deployment-build.yaml
+                                
+                                echo "Deploying with image tag: ${BUILD_NUMBER}"
+                                kubectl apply -f k8s/deployment-build.yaml
                                 kubectl apply -f k8s/service.yaml
+                                
+                                # Force rollout restart to ensure new image is pulled
+                                kubectl rollout restart deployment/eventsproject-deployment
                                 
                                 # Wait for deployment to be ready with increased timeout
                                 echo "Waiting for deployment to be ready (timeout: 10 minutes)..."
