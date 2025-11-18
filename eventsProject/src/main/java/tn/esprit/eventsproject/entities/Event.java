@@ -23,8 +23,8 @@ public class Event implements Serializable {
     LocalDate dateFin;
     float cout;
     @ManyToMany(mappedBy = "events")
-    transient Set<Participant> participants;
+    Set<Participant> participants;
     @OneToMany(fetch = FetchType.EAGER)
-    transient Set<Logistics> logistics;
+    Set<Logistics> logistics;
 
 }
