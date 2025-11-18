@@ -99,40 +99,6 @@ pipeline {
             }
         }
 
-        stage('JMETER PERFORMANCE TESTS') {
-            steps {
-                dir("${PROJECT_DIR}") {
-                    echo '=========================================='
-                    echo 'JMETER PERFORMANCE TESTING'
-                    echo '=========================================='
-                    script {
-                        def jmeterTestsExist = fileExists('src/test/jmeter')
-                        
-                        if (jmeterTestsExist) {
-                            echo 'Running JMeter performance tests...'
-                            sh 'mvn verify -DskipTests=true || true'
-                            
-                            echo '=========================================='
-                            echo 'JMETER EXECUTION COMPLETE'
-                            echo '=========================================='
-                            
-                            // Check if results actually exist before archiving
-                            if (fileExists('target/jmeter/results')) {
-                                archiveArtifacts artifacts: 'target/jmeter/results/**/*', allowEmptyArchive: true, fingerprint: true
-                                echo "JMeter reports: ${BUILD_URL}artifact/target/jmeter/results/"
-                            } else {
-                                echo '[INFO] No JMeter results generated (tests may have been skipped or no live endpoint available)'
-                                echo '[INFO] JMeter tests require a running application endpoint to test against'
-                            }
-                        } else {
-                            echo '[INFO] No JMeter tests found in src/test/jmeter'
-                            echo '[INFO] Create .jmx test files in src/test/jmeter to enable performance testing'
-                        }
-                    }
-                }
-            }
-        }
-
         stage('PROMETHEUS') {
             steps {
                 echo '=========================================='
@@ -664,6 +630,69 @@ EOF
                                     echo "kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                                 fi
                             '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('JMETER PERFORMANCE TESTS') {
+            steps {
+                dir("${PROJECT_DIR}") {
+                    echo '=========================================='
+                    echo 'JMETER PERFORMANCE TESTING'
+                    echo '=========================================='
+                    script {
+                        def jmeterTestsExist = fileExists('src/test/jmeter')
+                        
+                        if (jmeterTestsExist) {
+                            withCredentials([
+                                string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                            ]) {
+                                sh '''
+                                    export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                    export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                    export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+                                    
+                                    aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
+                                    
+                                    LOADBALANCER_URL=$(kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+                                    
+                                    if [ -n "$LOADBALANCER_URL" ]; then
+                                        echo "Running JMeter tests against: http://${LOADBALANCER_URL}/events"
+                                        mvn verify -DskipTests=true -Djmeter.target.host=${LOADBALANCER_URL} || true
+                                    else
+                                        echo "[WARNING] No LoadBalancer URL - skipping JMeter tests"
+                                    fi
+                                '''
+                            }
+                            
+                            echo '=========================================='
+                            echo 'JMETER EXECUTION COMPLETE'
+                            echo '=========================================='
+                            
+                            if (fileExists('target/jmeter/results')) {
+                                archiveArtifacts artifacts: 'target/jmeter/results/**/*', allowEmptyArchive: true, fingerprint: true
+                                
+                                if (fileExists('target/jmeter/reports')) {
+                                    publishHTML(target: [
+                                        allowMissing: false,
+                                        alwaysLinkToLastBuild: true,
+                                        keepAll: true,
+                                        reportDir: 'target/jmeter/reports',
+                                        reportFiles: 'index.html',
+                                        reportName: 'JMeter Performance Report'
+                                    ])
+                                    echo "JMeter HTML Report: ${BUILD_URL}JMeter_20Performance_20Report/"
+                                }
+                                echo "JMeter artifacts: ${BUILD_URL}artifact/target/jmeter/results/"
+                            } else {
+                                echo '[INFO] No JMeter results generated'
+                            }
+                        } else {
+                            echo '[INFO] No JMeter tests found in src/test/jmeter'
                         }
                     }
                 }
