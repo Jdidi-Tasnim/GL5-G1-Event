@@ -14,7 +14,7 @@ spec:
       labels:
         app: eventsproject
       annotations:
-        kubectl.kubernetes.io/restartedAt: "2025-11-18T14:40:00Z" 
+        kubectl.kubernetes.io/restartedAt: "2025-11-18T14:45:00Z" 
     spec:
       containers:
       - name: eventsproject

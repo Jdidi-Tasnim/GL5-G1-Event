@@ -66,6 +66,23 @@ pipeline {
                     sh 'mvn test'
                 }
             }
+            post {
+                always {
+                    dir("${PROJECT_DIR}") {
+                        publishHTML(target: [
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'target/site/jacoco',
+                            reportFiles: 'index.html',
+                            reportName: 'JaCoCo Coverage Report'
+                        ])
+                        echo '=========================================='
+                        echo 'JaCoCo Coverage Report: ${BUILD_URL}JaCoCo_Coverage_Report/'
+                        echo '=========================================='
+                    }
+                }
+            }
         }
 
         stage('MVN SONARQUBE') {
