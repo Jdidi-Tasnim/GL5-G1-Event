@@ -434,7 +434,7 @@ EOF
                                     
                                     echo ""
                                     echo "=== Pod Status ==="
-                                    kubectl get pods -l app=eventsproject-app -o wide
+                                    kubectl get pods -l app=eventsproject -o wide
                                     
                                     echo ""
                                     echo "=== Recent Events ==="
@@ -442,7 +442,7 @@ EOF
                                     
                                     echo ""
                                     echo "=== Pod Logs (last 100 lines) ==="
-                                    for pod in $(kubectl get pods -l app=eventsproject-app -o name); do
+                                    for pod in $(kubectl get pods -l app=eventsproject -o name); do
                                         echo "--- Logs for $pod ---"
                                         kubectl logs $pod --tail=100 || echo "Could not get logs for $pod"
                                         echo ""
@@ -478,7 +478,7 @@ EOF
                                     # Show pod status
                                     echo ""
                                     echo "=== Running Pods ==="
-                                    kubectl get pods -l app=eventsproject-app -o wide
+                                    kubectl get pods -l app=eventsproject -o wide
                                 else
                                     echo "[WARNING] LoadBalancer URL not yet available. Check service status:"
                                     kubectl describe service eventsproject-service
