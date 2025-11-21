@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: event
-        image: oussemahamouda/eventsproject:latest
+        image: oussemahamouda/eventsproject:166
         ports:
         - containerPort: 3110
