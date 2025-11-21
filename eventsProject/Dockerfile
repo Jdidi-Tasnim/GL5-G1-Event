@@ -9,7 +9,7 @@ WORKDIR /app
 COPY target/eventsProject-1.0.0-SNAPSHOT.jar app.jar
 
 # Expose your app port (adjust if needed)
-EXPOSE 80
+EXPOSE 3110
 
 # Run the app
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -7,6 +7,6 @@ spec:
     app: event
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 80
+      port: 3110
+      targetPort: 3110
   type: LoadBalancer
