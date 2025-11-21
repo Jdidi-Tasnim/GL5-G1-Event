@@ -23,7 +23,8 @@ module "eks" {
     }
   }
 
-  enable_cluster_creator_admin_permissions = true
+  # Manage aws-auth ConfigMap to grant cluster access
+  manage_aws_auth_configmap = true
 
   tags = {
     Name = var.cluster_name
