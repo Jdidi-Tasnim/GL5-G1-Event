@@ -470,8 +470,9 @@ EOF
                                 echo "=========================================="
                                 kubectl apply -f k8s/mysql-deployment.yaml
                                 
-                                echo "Waiting for PVC to be bound..."
-                                kubectl get pvc mysql-pvc
+                                # Remove PVC check since we're using emptyDir
+                                # echo "Waiting for PVC to be bound..."
+                                # kubectl get pvc mysql-pvc
                                 
                                 echo "Waiting for MySQL deployment to be ready (timeout: 10 minutes)..."
                                 if ! kubectl rollout status deployment/mysql --timeout=10m; then
