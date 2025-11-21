@@ -12,7 +12,7 @@ module "eks" {
 
   eks_managed_node_groups = {
     main = {
-      name = "${var.cluster_name}-node-group"
+      name = "nodes"
 
       instance_types = [var.node_instance_type]
       capacity_type  = "ON_DEMAND"
@@ -20,11 +20,15 @@ module "eks" {
       min_size     = var.node_min_size
       max_size     = var.node_max_size
       desired_size = var.node_desired_size
+      
+      # Use short IAM role name to avoid length limit
+      iam_role_name = "events-eks-nodes"
+      iam_role_use_name_prefix = false
     }
   }
 
-  # Manage aws-auth ConfigMap to grant cluster access
-  manage_aws_auth_configmap = true
+  # Disable aws-auth ConfigMap management due to AWS Academy IAM restrictions
+  manage_aws_auth_configmap = false
 
   tags = {
     Name = var.cluster_name

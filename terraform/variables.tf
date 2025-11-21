@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "EKS cluster name"
   type        = string
-  default     = "eventsproject-dev"
+  default     = "events-eks"
 }
 
 variable "node_instance_type" {
