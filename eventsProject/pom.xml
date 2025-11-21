@@ -165,6 +165,9 @@
                     <resultsDirectory>${project.build.directory}/jmeter/results</resultsDirectory>
                     <generateReports>true</generateReports>
                     <ignoreResultFailures>true</ignoreResultFailures>
+                    <propertiesUser>
+                        <jmeter.target.host>${jmeter.target.host}</jmeter.target.host>
+                    </propertiesUser>
                 </configuration>
             </plugin>
         </plugins>

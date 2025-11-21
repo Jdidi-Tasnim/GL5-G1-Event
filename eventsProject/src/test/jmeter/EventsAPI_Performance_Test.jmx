@@ -11,6 +11,13 @@
             <stringProp name="Argument.name">TARGET_HOST</stringProp>
             <stringProp name="Argument.value">${__P(jmeter.target.host,localhost:8089)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
+            <stringProp name="Argument.desc">Target host for API testing</stringProp>
+          </elementProp>
+          <elementProp name="DEBUG_HOST" elementType="Argument">
+            <stringProp name="Argument.name">DEBUG_HOST</stringProp>
+            <stringProp name="Argument.value">${__P(jmeter.target.host)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+            <stringProp name="Argument.desc">Debug: Raw property value</stringProp>
           </elementProp>
         </collectionProp>
       </elementProp>
@@ -33,6 +40,12 @@
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
       </ThreadGroup>
       <hashTree>
+        <DebugSampler guiclass="TestBeanGUI" testclass="DebugSampler" testname="Debug - Show Variables" enabled="true">
+          <boolProp name="displayJMeterProperties">false</boolProp>
+          <boolProp name="displayJMeterVariables">true</boolProp>
+          <boolProp name="displaySystemProperties">false</boolProp>
+        </DebugSampler>
+        <hashTree/>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Health Check Request" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
             <collectionProp name="Arguments.arguments"/>

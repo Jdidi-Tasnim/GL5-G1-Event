@@ -670,8 +670,23 @@ EOF
                                     LOADBALANCER_URL=$(kubectl get service eventsproject-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
                                     
                                     if [ -n "$LOADBALANCER_URL" ]; then
-                                        echo "Running JMeter tests against: http://${LOADBALANCER_URL}/events"
-                                        mvn verify -DskipTests=false -Djmeter.target.host=${LOADBALANCER_URL} -DBASE_URL=http://${LOADBALANCER_URL}/events || true
+                                        echo "=========================================="
+                                        echo "Running JMeter tests against LoadBalancer"
+                                        echo "=========================================="
+                                        echo "Target Host: ${LOADBALANCER_URL}"
+                                        echo "Full URL: http://${LOADBALANCER_URL}/events"
+                                        echo ""
+                                        
+                                        # Run Maven with JMeter, passing the property correctly
+                                        mvn verify \
+                                            -DskipTests=false \
+                                            -Djmeter.target.host="${LOADBALANCER_URL}" \
+                                            || true
+                                        
+                                        echo ""
+                                        echo "=========================================="
+                                        echo "JMeter execution completed"
+                                        echo "=========================================="
                                     else
                                         echo "[WARNING] No LoadBalancer URL - skipping JMeter tests"
                                     fi
