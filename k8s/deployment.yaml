@@ -85,10 +85,6 @@ spec:
           value: "root"
         - name: SPRING_DATASOURCE_PASSWORD
           value: "rootpassword"
-        - name: SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT
-          value: "60000"
-        - name: SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT
-          value: "60000"
         resources:
           requests:
             memory: "512Mi"
