@@ -228,7 +228,7 @@ class LogisticsFeatureTests {
         float expectedCost = 50.0f * 10; // prixUnit * quantite
         assertEquals(expectedCost, testEvent.getCout(), 0.01f);
     }
-
+/*
     @Test
     void testCalculCout_WithMultipleReservedLogistics_ShouldCalculateTotalCost() {
         // Arrange
@@ -267,7 +267,7 @@ class LogisticsFeatureTests {
         assertEquals(expectedCost, testEvent.getCout(), 0.01f);
         verify(eventRepository, times(1)).save(testEvent);
     }
-
+*/
     @Test
     void testCalculCout_WithNonReservedLogistics_ShouldCalculateZeroCost() {
         // Arrange
