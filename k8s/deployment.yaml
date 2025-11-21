@@ -64,7 +64,7 @@ metadata:
   name: eventsproject-deployment
   namespace: events-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: eventsproject
