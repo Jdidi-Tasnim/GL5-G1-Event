@@ -10,9 +10,10 @@ module "eks" {
 
   cluster_endpoint_public_access = true
 
-  # AWS Academy workaround: Skip IAM session context check to avoid GetRole permission requirement
-  # This prevents the error: "User is not authorized to perform: iam:GetRole on resource: role voclabs"
-  create_cluster_primary_security_group_tags = false
+  # AWS Academy workaround: Use existing LabRole instead of creating new IAM roles
+  # This prevents IAM CreateRole permission errors
+  create_iam_role = false
+  iam_role_arn    = "arn:aws:iam::288075300191:role/LabRole"
   
   eks_managed_node_groups = {
     main = {
@@ -25,9 +26,9 @@ module "eks" {
       max_size     = var.node_max_size
       desired_size = var.node_desired_size
       
-      # Use short IAM role name to avoid length limit
-      iam_role_name = "events-eks-nodes"
-      iam_role_use_name_prefix = false
+      # Use existing LabRole for node groups
+      create_iam_role = false
+      iam_role_arn    = "arn:aws:iam::288075300191:role/LabRole"
     }
   }
 
