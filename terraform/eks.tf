@@ -15,6 +15,9 @@ module "eks" {
   create_iam_role = false
   iam_role_arn    = "arn:aws:iam::288075300191:role/LabRole"
   
+  # Disable OIDC provider creation - AWS Academy doesn't allow CreateOpenIDConnectProvider
+  enable_irsa = false
+  
   eks_managed_node_groups = {
     main = {
       name = "nodes"
