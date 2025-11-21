@@ -45,6 +45,15 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- ======================================================= -->
+        <!-- AJOUT SWAGGER (Compatible Spring Boot 2.x)             -->
+        <!-- ======================================================= -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
         <!-- DevTools (optionnel) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -127,4 +136,3 @@
     </profiles>
 
 </project>
-
