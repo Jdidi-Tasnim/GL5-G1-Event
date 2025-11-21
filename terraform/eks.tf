@@ -1,6 +1,6 @@
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
+  version = "~> 18.0"
 
   cluster_name    = var.cluster_name
   cluster_version = "1.28"
@@ -10,6 +10,10 @@ module "eks" {
 
   cluster_endpoint_public_access = true
 
+  # AWS Academy workaround: Skip IAM session context check to avoid GetRole permission requirement
+  # This prevents the error: "User is not authorized to perform: iam:GetRole on resource: role voclabs"
+  create_cluster_primary_security_group_tags = false
+  
   eks_managed_node_groups = {
     main = {
       name = "nodes"
