@@ -1,5 +1,5 @@
 # Multi-stage build pour optimiser la taille de l'image
-FROM openjdk:17-jdk-slim as builder
+FROM eclipse-temurin:17-jdk-alpine as builder
 
 WORKDIR /app
 
@@ -10,12 +10,12 @@ COPY target/eventsProject-*.jar app.jar
 RUN java -Djarmode=layertools -jar app.jar extract
 
 # Stage final - image légère
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
 # Créer un utilisateur non-root pour la sécurité
-RUN addgroup --system spring && adduser --system spring --ingroup spring
+RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
 # Copier les layers extraits
