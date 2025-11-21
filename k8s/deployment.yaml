@@ -87,27 +87,27 @@ spec:
           value: "rootpassword"
         resources:
           requests:
-            memory: "512Mi"
+            memory: "768Mi"
             cpu: "250m"
           limits:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "2Gi"
+            cpu: "1000m"
         livenessProbe:
           httpGet:
             path: /events/actuator/health
             port: 8089
-          initialDelaySeconds: 240
-          periodSeconds: 15
+          initialDelaySeconds: 360
+          periodSeconds: 20
           timeoutSeconds: 10
-          failureThreshold: 3
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /events/actuator/health
             port: 8089
-          initialDelaySeconds: 120
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 10
+          initialDelaySeconds: 180
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 15
 ---
 apiVersion: v1
 kind: Service
